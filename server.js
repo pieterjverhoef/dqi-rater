@@ -72,6 +72,55 @@ app.use('/api/ratings', ratingRoutes);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// --- Auto-register any upload folders not yet in the database ---
+const fs = require('fs');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
+if (fs.existsSync(UPLOADS_DIR)) {
+  const setDirs = fs.readdirSync(UPLOADS_DIR, { withFileTypes: true })
+    .filter(e => e.isDirectory())
+    .map(e => e.name);
+
+  const insertSet = db.prepare('INSERT OR IGNORE INTO image_sets (name) VALUES (?)');
+  const getSet = db.prepare('SELECT * FROM image_sets WHERE name = ?');
+  const insertImage = db.prepare(
+    'INSERT OR IGNORE INTO images (set_id, filename, algorithm_score) VALUES (?, ?, ?)'
+  );
+
+  for (const setName of setDirs) {
+    insertSet.run(setName);
+    const set = getSet.get(setName);
+    const setDir = path.join(UPLOADS_DIR, setName);
+
+    const folders = fs.readdirSync(setDir, { withFileTypes: true })
+      .filter(e => e.isDirectory())
+      .map(e => e.name);
+
+    let registered = 0;
+    for (const folder of folders) {
+      const folderPath = path.join(setDir, folder);
+      const hasOriginal = fs.existsSync(path.join(folderPath, 'original.jpg'));
+      const hasFpc = fs.existsSync(path.join(folderPath, 'fpc_result.jpg'));
+      const hasGrid = fs.existsSync(path.join(folderPath, 'grid_overlay.jpg'));
+      if (!hasOriginal || !hasFpc || !hasGrid) continue;
+
+      const metaPath = path.join(folderPath, 'metadata.json');
+      let algorithmScore = null;
+      if (fs.existsSync(metaPath)) {
+        try {
+          const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+          if (!meta.cv_rating) continue;
+          algorithmScore = meta.algorithm_score ?? null;
+        } catch { continue; }
+      } else { continue; }
+
+      insertImage.run(set.id, folder, algorithmScore);
+      registered++;
+    }
+    if (registered > 0) console.log(`Auto-registered ${registered} images in set "${setName}"`);
+  }
+}
+
 // --- Start server ---
 app.listen(PORT, () => {
   console.log(`DQI Rater running at http://localhost:${PORT}`);
