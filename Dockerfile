@@ -2,10 +2,7 @@ FROM node:20-slim
 
 # Install rclone
 RUN apt-get update && apt-get install -y curl unzip && \
-    curl -O https://downloads.rclone.org/current/rclone-current-linux-amd64.zip && \
-    unzip rclone-current-linux-amd64.zip && \
-    cp rclone-*-linux-amd64/rclone /usr/bin/ && \
-    rm -rf rclone-* && \
+    curl -L https://rclone.org/install.sh | bash && \
     apt-get remove -y curl unzip && apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
