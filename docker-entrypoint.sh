@@ -8,7 +8,9 @@ if [ -f /root/.config/rclone/rclone.conf ]; then
   if [ -n "$REMOTE_PATH" ]; then
     echo "Syncing images from ${REMOTE}:${REMOTE_PATH} ..."
     RCLONE_FLAGS="${RCLONE_FLAGS:-}"
-    rclone sync "${REMOTE}:${REMOTE_PATH}" /app/uploads --progress $RCLONE_FLAGS
+    SET_NAME=$(basename "${REMOTE_PATH}")
+    mkdir -p "/app/uploads/${SET_NAME}"
+    rclone sync "${REMOTE}:${REMOTE_PATH}" "/app/uploads/${SET_NAME}" --progress $RCLONE_FLAGS
     echo "Sync complete."
   else
     echo "RCLONE_PATH not set, skipping image sync."
