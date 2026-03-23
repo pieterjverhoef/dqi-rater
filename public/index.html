@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DQI Rater — Login</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="login-page">
+
+  <div class="login-card">
+    <div class="login-header">
+      <h1>DQI Rater</h1>
+      <p>Dropsight — Distribution Quality Index</p>
+    </div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="e.g. pieter" autocomplete="username" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+
+      <div id="error-message" class="error-message hidden"></div>
+
+      <button type="submit" id="login-btn">Log in</button>
+    </form>
+  </div>
+
+  <script src="js/login.js"></script>
+</body>
+</html>

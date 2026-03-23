@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DQI Rater</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="rate-page">
+
+  <!-- Top bar -->
+  <header class="rate-header">
+    <div class="header-left">
+      <button id="btn-logout" class="btn-text">← Logout</button>
+      <span id="user-display" class="user-display"></span>
+    </div>
+    <div class="header-center">
+      <span id="progress-text" class="progress-text">0 / 0 rated</span>
+      <div class="progress-bar-wrap">
+        <div id="progress-fill" class="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="set-name-display" class="set-name"></span>
+    </div>
+  </header>
+
+  <main class="rate-main">
+
+    <!-- Far left: image list sidebar -->
+    <nav class="image-sidebar">
+      <p class="sidebar-title">Images</p>
+      <ul id="image-list" class="image-list"></ul>
+    </nav>
+
+    <!-- Left: image viewer -->
+    <section class="image-panel">
+
+      <!-- Three equal panels: Original | FPC Result | Grid Overlay -->
+      <div class="image-panels-row">
+
+        <div class="img-panel">
+          <span class="panel-label">Original</span>
+          <div class="panel-container">
+            <img id="img-original" src="" alt="original leaf" />
+          </div>
+        </div>
+
+        <div class="img-panel">
+          <span class="panel-label">FPC Result</span>
+          <div class="panel-container">
+            <img id="img-fpc" src="" alt="FPC result" />
+          </div>
+        </div>
+
+        <div class="img-panel" id="panel-grid" style="display:none">
+          <span class="panel-label">Grid Overlay</span>
+          <div class="panel-container" id="grid-panel-container">
+            <img id="img-grid" src="" alt="grid overlay" />
+            <canvas id="grid-canvas"></canvas>
+            <div id="hover-tooltip" class="hover-tooltip hidden"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="image-controls">
+        <label class="toggle-label">
+          <input type="checkbox" id="toggle-grid" />
+          Show Grid Overlay
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="toggle-score" checked />
+          Show Algorithm Score
+        </label>
+      </div>
+
+    </section>
+
+    <!-- Right: rating panel -->
+    <aside class="rating-panel">
+
+      <!-- Set selector (shown at start) -->
+      <div id="set-selector">
+        <h2>Select Image Set</h2>
+        <p class="hint">Choose a set of images to rate.</p>
+        <div id="set-list" class="set-list"></div>
+        <div id="no-sets-msg" class="hidden hint">
+          No image sets available yet. Ask Pieter to upload one.
+        </div>
+      </div>
+
+      <!-- Rating UI (hidden until set is selected) -->
+      <div id="rating-ui" class="hidden">
+
+        <div class="image-info-bar">
+          <span id="image-counter" class="image-counter">1 / 24</span>
+          <span id="image-filename" class="image-filename"></span>
+        </div>
+
+        <div id="algo-score-row" class="algo-score-row">
+          <span class="algo-label">Algorithm:</span>
+          <span id="algo-score-badge" class="score-badge"></span>
+          <span id="cv-value" class="cv-value"></span>
+        </div>
+
+        <div class="rating-section">
+          <p class="section-label">Your rating</p>
+          <div class="rating-buttons">
+            <button class="rating-btn score-1" data-score="1">
+              <span class="score-number">1</span>
+              <span class="score-label">Unacceptable</span>
+            </button>
+            <button class="rating-btn score-2" data-score="2">
+              <span class="score-number">2</span>
+              <span class="score-label">Risk</span>
+            </button>
+            <button class="rating-btn score-3" data-score="3">
+              <span class="score-number">3</span>
+              <span class="score-label">Acceptable</span>
+            </button>
+            <button class="rating-btn score-4" data-score="4">
+              <span class="score-number">4</span>
+              <span class="score-label">Good</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="reasoning-section">
+          <label for="reasoning" class="section-label">Reasoning <span class="optional">(optional)</span></label>
+          <textarea id="reasoning" rows="3" placeholder="Why did you give this rating?"></textarea>
+        </div>
+
+        <div class="nav-buttons">
+          <button id="btn-prev" class="nav-btn">← Prev</button>
+          <button id="btn-skip" class="nav-btn nav-skip">Skip</button>
+          <button id="btn-next" class="nav-btn nav-next">Next →</button>
+        </div>
+
+        <button id="btn-reset-ratings" class="btn-reset-ratings">Remove all previous ratings</button>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <script src="js/rate.js"></script>
+</body>
+</html>

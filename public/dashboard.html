@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DQI Rater — Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="dashboard-page">
+
+  <header class="dash-header">
+    <div class="header-left">
+      <button id="btn-logout" class="btn-text">← Logout</button>
+      <span class="user-display">Pieter — Admin</span>
+    </div>
+    <h1 class="dash-title">Dashboard</h1>
+    <div class="header-right">
+      <button id="btn-export-csv" class="btn btn-sm">Export CSV</button>
+      <button id="btn-export-json" class="btn btn-sm">Export JSON</button>
+    </div>
+  </header>
+
+  <main class="dash-main">
+
+    <!-- Set selector -->
+    <div id="set-selector" class="dash-section">
+      <h2>Select Image Set</h2>
+      <div id="set-list" class="set-list"></div>
+      <p id="no-sets-msg" class="hint hidden">No image sets available yet.</p>
+    </div>
+
+    <!-- Summary cards (hidden until set is selected) -->
+    <div id="dash-content" class="hidden">
+
+      <div class="summary-cards">
+        <div class="summary-card">
+          <span class="card-value" id="card-total">—</span>
+          <span class="card-label">Total images</span>
+        </div>
+        <div class="summary-card">
+          <span class="card-value" id="card-rated">—</span>
+          <span class="card-label">Fully rated</span>
+        </div>
+        <div class="summary-card">
+          <span class="card-value" id="card-agreement">—</span>
+          <span class="card-label">Full agreement</span>
+        </div>
+        <div class="summary-card">
+          <span class="card-value" id="card-avg-diff">—</span>
+          <span class="card-label">Avg. rater vs algorithm</span>
+        </div>
+      </div>
+
+      <!-- Per-image table -->
+      <div class="table-wrap">
+        <table id="dash-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Algorithm</th>
+              <th>Cobus</th>
+              <th>Marius</th>
+              <th>Agreement</th>
+              <th>Avg vs Algo</th>
+            </tr>
+          </thead>
+          <tbody id="dash-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
