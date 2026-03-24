@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DQI Rater — Deep Analysis</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="da-page">
+
+  <header class="da-header">
+    <button id="da-back" class="btn btn-sm">← Back</button>
+    <span id="da-image-name" class="da-image-name"></span>
+    <div class="da-nav">
+      <button id="da-prev" class="btn btn-sm">◀ Prev</button>
+      <span id="da-pos" class="da-pos-label"></span>
+      <button id="da-next" class="btn btn-sm">Next ▶</button>
+    </div>
+  </header>
+
+  <main class="da-main">
+
+    <!-- Left: image area -->
+    <section class="da-images">
+
+      <div class="da-img-row" id="da-img-row">
+
+        <!-- Original panel (hidden by default) -->
+        <div class="da-img-panel hidden" id="da-panel-original">
+          <span class="panel-label">Original</span>
+          <div class="panel-container">
+            <img id="da-img-original" alt="original" />
+          </div>
+        </div>
+
+        <!-- FPC panel (always visible) -->
+        <div class="da-img-panel" id="da-panel-fpc">
+          <span class="panel-label">FPC Result</span>
+          <div class="panel-container" id="da-fpc-container">
+            <img id="da-img-fpc" alt="fpc result" />
+            <canvas id="da-grid-canvas"></canvas>
+            <div id="da-tooltip" class="hover-tooltip hidden"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="da-controls">
+        <label class="toggle-label">
+          <input type="checkbox" id="da-toggle-original" />
+          Show Original
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="da-toggle-grid" />
+          Show Grid Overlay
+        </label>
+      </div>
+
+    </section>
+
+    <!-- Right: sidebar -->
+    <aside class="da-sidebar">
+
+      <div class="da-rater-block">
+        <h3 class="da-rater-name">Cobus</h3>
+        <span id="da-cobus-badge" class="score-badge s0">—</span>
+        <p id="da-cobus-reasoning" class="da-reasoning"></p>
+      </div>
+
+      <hr class="da-divider" />
+
+      <div class="da-rater-block">
+        <h3 class="da-rater-name">Marius</h3>
+        <span id="da-marius-badge" class="score-badge s0">—</span>
+        <p id="da-marius-reasoning" class="da-reasoning"></p>
+      </div>
+
+      <hr class="da-divider" />
+
+      <div class="da-rater-block">
+        <h3 class="da-rater-name">Algorithm</h3>
+        <span id="da-algo-badge" class="score-badge s0">—</span>
+      </div>
+
+      <hr class="da-divider" />
+
+      <div class="da-avg-row">
+        <span class="da-avg-label">Avg vs Algo</span>
+        <span id="da-avg-diff" class="da-avg-value">—</span>
+      </div>
+
+      <div id="da-agreement-badge" class="da-agreement-badge"></div>
+
+    </aside>
+
+  </main>
+
+  <script src="js/deep-analysis.js"></script>
+</body>
+</html>

@@ -17,6 +17,7 @@
     <div class="header-right">
       <button id="btn-export-csv" class="btn btn-sm">Export CSV</button>
       <button id="btn-export-json" class="btn btn-sm">Export JSON</button>
+      <button id="btn-deep-analysis" class="btn btn-sm btn-deep-analysis-header hidden">Deep Analysis</button>
     </div>
   </header>
 
@@ -62,7 +63,6 @@
               <th>Marius</th>
               <th>Agreement</th>
               <th>Avg vs Algo</th>
-              <th></th>
             </tr>
           </thead>
           <tbody id="dash-tbody"></tbody>
@@ -71,84 +71,6 @@
 
     </div>
   </main>
-
-  <!-- ===================== Detail slide panel ===================== -->
-  <div id="detail-overlay" class="detail-overlay hidden"></div>
-
-  <div id="detail-panel" class="detail-panel">
-    <div class="detail-header">
-      <button id="detail-close" class="btn btn-sm">✕ Close</button>
-      <span id="detail-image-name" class="detail-title"></span>
-      <div class="detail-nav">
-        <button id="detail-prev" class="btn btn-sm">◀ Prev</button>
-        <span id="detail-pos" class="detail-pos-label"></span>
-        <button id="detail-next" class="btn btn-sm">Next ▶</button>
-      </div>
-    </div>
-
-    <div class="detail-body">
-
-      <!-- Left: images -->
-      <div class="detail-images">
-        <div class="detail-img-row">
-          <div class="detail-img-panel">
-            <span class="panel-label">Original</span>
-            <div class="panel-container">
-              <img id="detail-img-original" alt="original" />
-            </div>
-          </div>
-          <div class="detail-img-panel">
-            <span class="panel-label">FPC Result</span>
-            <div class="panel-container" id="detail-fpc-container">
-              <img id="detail-img-fpc" alt="fpc result" />
-              <canvas id="detail-grid-canvas"></canvas>
-              <div id="detail-hover-tooltip" class="hover-tooltip hidden"></div>
-            </div>
-          </div>
-        </div>
-        <div class="detail-img-controls">
-          <label>
-            <input type="checkbox" id="detail-toggle-grid" />
-            Show Grid Overlay
-          </label>
-        </div>
-      </div>
-
-      <!-- Right: ratings + Pieter notes -->
-      <div class="detail-sidebar">
-
-        <div class="detail-score-block">
-          <div class="detail-score-row">
-            <span class="detail-score-label">Algorithm</span>
-            <span id="detail-algo-badge" class="score-badge s0">—</span>
-          </div>
-          <hr class="detail-divider" />
-          <div class="detail-score-row">
-            <span class="detail-score-label">Cobus</span>
-            <span id="detail-cobus-badge" class="score-badge s0">—</span>
-          </div>
-          <p id="detail-cobus-reasoning" class="detail-reasoning"></p>
-          <div class="detail-score-row">
-            <span class="detail-score-label">Marius</span>
-            <span id="detail-marius-badge" class="score-badge s0">—</span>
-          </div>
-          <p id="detail-marius-reasoning" class="detail-reasoning"></p>
-          <div id="detail-agreement-badge" class="detail-agreement-badge"></div>
-        </div>
-
-        <div class="detail-notes-block">
-          <label class="detail-notes-label">Pieter's notes</label>
-          <textarea id="detail-pieter-note" class="detail-notes-textarea"
-                    placeholder="Add your analysis notes here…"></textarea>
-          <div class="detail-notes-footer">
-            <button id="detail-save-note" class="btn btn-sm">Save Note</button>
-            <span id="detail-note-saved" class="detail-note-saved hidden">✓ Saved</span>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
 
   <script src="js/dashboard.js"></script>
 </body>
