@@ -43,6 +43,13 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (image_id) REFERENCES images(id)
   );
+
+  CREATE TABLE IF NOT EXISTS pieter_notes (
+    image_id INTEGER PRIMARY KEY,
+    note TEXT,
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (image_id) REFERENCES images(id)
+  );
 `);
 
 // Seed the 3 fixed user accounts if they don't exist yet

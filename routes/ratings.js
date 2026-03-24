@@ -57,6 +57,31 @@ router.delete('/:userId/:setId', (req, res) => {
   res.json({ success: true });
 });
 
+// GET /api/ratings/note/:imageId — get Pieter's note for one image
+router.get('/note/:imageId', (req, res) => {
+  const db  = req.app.get('db');
+  const row = db.prepare('SELECT note FROM pieter_notes WHERE image_id = ?')
+                .get(req.params.imageId);
+  res.json({ note: row ? row.note : null });
+});
+
+// POST /api/ratings/note — save or update Pieter's note for one image
+router.post('/note', (req, res) => {
+  const db = req.app.get('db');
+  const { image_id, note } = req.body;
+  if (!image_id) return res.status(400).json({ error: 'image_id is required' });
+
+  db.prepare(`
+    INSERT INTO pieter_notes (image_id, note, updated_at)
+    VALUES (?, ?, datetime('now'))
+    ON CONFLICT(image_id) DO UPDATE SET
+      note       = excluded.note,
+      updated_at = datetime('now')
+  `).run(image_id, note || null);
+
+  res.json({ success: true });
+});
+
 // GET /api/ratings/dashboard/:setId — all ratings for Pieter's dashboard
 router.get('/dashboard/:setId', (req, res) => {
   const db = req.app.get('db');
@@ -68,10 +93,12 @@ router.get('/dashboard/:setId', (req, res) => {
       u.username,
       r.score,
       r.reasoning,
-      r.rated_at
+      r.rated_at,
+      pn.note AS pieter_note
     FROM images i
     LEFT JOIN ratings r ON i.id = r.image_id
     LEFT JOIN users u ON r.user_id = u.id
+    LEFT JOIN pieter_notes pn ON i.id = pn.image_id
     WHERE i.set_id = ?
     ORDER BY i.filename, u.username
   `).all(req.params.setId);
