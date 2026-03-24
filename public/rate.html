@@ -39,7 +39,7 @@
       <!-- Three equal panels: Original | FPC Result | Grid Overlay -->
       <div class="image-panels-row">
 
-        <div class="img-panel">
+        <div class="img-panel" id="panel-original" style="display:none">
           <span class="panel-label">Original</span>
           <div class="panel-container">
             <img id="img-original" src="" alt="original leaf" />
@@ -65,6 +65,10 @@
       </div>
 
       <div class="image-controls">
+        <label class="toggle-label">
+          <input type="checkbox" id="toggle-original" />
+          Show Original
+        </label>
         <label class="toggle-label">
           <input type="checkbox" id="toggle-grid" />
           Show Grid Overlay

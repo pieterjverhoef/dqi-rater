@@ -38,11 +38,13 @@ const els = {
   imgOriginal:        document.getElementById('img-original'),
   imgFpc:             document.getElementById('img-fpc'),
   imgGrid:            document.getElementById('img-grid'),
+  panelOriginal:      document.getElementById('panel-original'),
   panelGrid:          document.getElementById('panel-grid'),
   gridPanelContainer: document.getElementById('grid-panel-container'),
   gridCanvas:         document.getElementById('grid-canvas'),
   hoverTooltip:       document.getElementById('hover-tooltip'),
 
+  toggleOriginal:     document.getElementById('toggle-original'),
   toggleGrid:         document.getElementById('toggle-grid'),
   toggleScore:        document.getElementById('toggle-score'),
 
@@ -374,6 +376,11 @@ function bindEvents() {
     }
     sessionStorage.removeItem('user');
     window.location.href = '/';
+  });
+
+  // Original toggle — show/hide the original image panel
+  els.toggleOriginal.addEventListener('change', () => {
+    els.panelOriginal.style.display = els.toggleOriginal.checked ? '' : 'none';
   });
 
   // Grid toggle — show/hide the grid panel
