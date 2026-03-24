@@ -173,7 +173,6 @@ function renderTable(rows) {
 
   rows.forEach((row, idx) => {
     const tr = document.createElement('tr');
-    tr.classList.add('dash-row-clickable');
 
     if (row.fullyRated && row.allSame)  tr.classList.add('row-agree');
     else if (row.fullyRated)            tr.classList.add('row-disagree');
@@ -198,9 +197,15 @@ function renderTable(rows) {
       </td>
       <td>${agreementText}</td>
       <td class="col-diff">${diffText}</td>
+      <td class="col-detail"></td>
     `;
 
-    tr.addEventListener('click', () => openDetail(idx));
+    const btn = document.createElement('button');
+    btn.className   = 'btn btn-deep-analysis';
+    btn.textContent = 'Deep Analysis';
+    btn.addEventListener('click', () => openDetail(idx));
+    tr.querySelector('.col-detail').appendChild(btn);
+
     els.tbody.appendChild(tr);
   });
 }

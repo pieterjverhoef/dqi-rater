@@ -768,13 +768,24 @@ textarea#reasoning:focus {
 }
 
 /* =====================
-   Dashboard — Clickable rows
+   Dashboard — Deep Analysis button
    ===================== */
-#dash-table tbody tr.dash-row-clickable {
+.btn-deep-analysis {
+  background: linear-gradient(135deg, #2a4a7f, #1e3560);
+  color: #a8c4f0;
+  border: 1px solid #3a5a9f;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-#dash-table tbody tr.dash-row-clickable:hover {
-  background-color: #252d45;
+.btn-deep-analysis:hover {
+  background: linear-gradient(135deg, #3a5fa0, #2a4570);
+  border-color: #5a7abf;
+  color: #c8daff;
 }
 
 /* =====================
