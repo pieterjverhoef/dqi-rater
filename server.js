@@ -1,14 +1,22 @@
-const express = require('express');
-const path = require('path');
-const Database = require('better-sqlite3');
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import Database from 'better-sqlite3';
 
-const app = express();
+import authRoutes from './routes/auth.js';
+import imageRoutes from './routes/images.js';
+import ratingRoutes from './routes/ratings.js';
+import deployRoutes from './routes/deploy.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const app = new Hono();
 const PORT = 3000;
 
-// --- Database setup ---
 const db = new Database(path.join(__dirname, 'database', 'dqi-rater.sqlite'));
 
-// Create tables if they don't exist yet
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,7 +60,6 @@ db.exec(`
   );
 `);
 
-// Seed the 3 fixed user accounts if they don't exist yet
 const insertUser = db.prepare(
   `INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`
 );
@@ -60,27 +67,19 @@ insertUser.run('pieter',  'pieter123',  'admin');
 insertUser.run('cobus',   'cobus123',   'rater');
 insertUser.run('marius',  'marius123',  'rater');
 
-// --- Middleware ---
-app.use(express.json());
+app.use('*', async (c, next) => {
+  c.set('db', db);
+  await next();
+});
 
-// Make db available to route files
-app.set('db', db);
+app.route('/api/auth',    authRoutes);
+app.route('/api/images',  imageRoutes);
+app.route('/api/ratings', ratingRoutes);
+app.route('/api/deploy',  deployRoutes);
 
-// --- API Routes (registered before static so they are never intercepted) ---
-const authRoutes    = require('./routes/auth');
-const imageRoutes   = require('./routes/images');
-const ratingRoutes  = require('./routes/ratings');
+app.use('/uploads/*', serveStatic({ root: './' }));
+app.use('/*', serveStatic({ root: './public' }));
 
-app.use('/api/auth',    authRoutes);
-app.use('/api/images',  imageRoutes);
-app.use('/api/ratings', ratingRoutes);
-
-// --- Static files (after API routes) ---
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// --- Auto-register any upload folders not yet in the database ---
-const fs = require('fs');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 if (fs.existsSync(UPLOADS_DIR)) {
@@ -128,7 +127,6 @@ if (fs.existsSync(UPLOADS_DIR)) {
   }
 }
 
-// --- Start server ---
-app.listen(PORT, () => {
+serve({ fetch: app.fetch, port: PORT }, () => {
   console.log(`DQI Rater running at http://localhost:${PORT}`);
 });

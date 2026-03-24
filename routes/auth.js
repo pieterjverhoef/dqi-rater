@@ -1,13 +1,13 @@
-const express = require('express');
-const router = express.Router();
+import { Hono } from 'hono';
 
-// POST /api/auth/login
-router.post('/login', (req, res) => {
-  const db = req.app.get('db');
-  const { username, password } = req.body;
+const router = new Hono();
+
+router.post('/login', async (c) => {
+  const db = c.get('db');
+  const { username, password } = await c.req.json();
 
   if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required.' });
+    return c.json({ error: 'Username and password are required.' }, 400);
   }
 
   const user = db.prepare(
@@ -15,10 +15,10 @@ router.post('/login', (req, res) => {
   ).get(username.toLowerCase(), password);
 
   if (!user) {
-    return res.status(401).json({ error: 'Invalid username or password.' });
+    return c.json({ error: 'Invalid username or password.' }, 401);
   }
 
-  res.json({ id: user.id, username: user.username, role: user.role });
+  return c.json({ id: user.id, username: user.username, role: user.role });
 });
 
-module.exports = router;
+export default router;
