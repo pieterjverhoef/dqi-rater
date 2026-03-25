@@ -16,29 +16,35 @@ const SCORE_CLASS  = { 1: 's1', 2: 's2', 3: 's3', 4: 's4' };
 //  DOM refs
 // =====================
 const els = {
-  btnBack:          document.getElementById('da-back'),
-  imageName:        document.getElementById('da-image-name'),
-  pos:              document.getElementById('da-pos'),
-  btnPrev:          document.getElementById('da-prev'),
-  btnNext:          document.getElementById('da-next'),
+  btnBack:         document.getElementById('da-back'),
+  imageName:       document.getElementById('da-image-name'),
+  pos:             document.getElementById('da-pos'),
+  btnPrev:         document.getElementById('da-prev'),
+  btnNext:         document.getElementById('da-next'),
 
-  panelOriginal:    document.getElementById('da-panel-original'),
-  imgOriginal:      document.getElementById('da-img-original'),
-  imgFpc:           document.getElementById('da-img-fpc'),
-  fpcContainer:     document.getElementById('da-fpc-container'),
-  gridCanvas:       document.getElementById('da-grid-canvas'),
-  tooltip:          document.getElementById('da-tooltip'),
+  panelOriginal:   document.getElementById('da-panel-original'),
+  imgOriginal:     document.getElementById('da-img-original'),
+  imgFpc:          document.getElementById('da-img-fpc'),
+  imgGrid:         document.getElementById('da-img-grid'),
+  fpcLabel:        document.getElementById('da-fpc-label'),
+  fpcContainer:    document.getElementById('da-fpc-container'),
+  gridCanvas:      document.getElementById('da-grid-canvas'),
+  tooltip:         document.getElementById('da-tooltip'),
 
-  toggleOriginal:   document.getElementById('da-toggle-original'),
-  toggleGrid:       document.getElementById('da-toggle-grid'),
+  toggleOriginal:  document.getElementById('da-toggle-original'),
+  toggleGrid:      document.getElementById('da-toggle-grid'),
 
-  cobusBadge:       document.getElementById('da-cobus-badge'),
-  cobusReasoning:   document.getElementById('da-cobus-reasoning'),
-  mariusBadge:      document.getElementById('da-marius-badge'),
-  mariusReasoning:  document.getElementById('da-marius-reasoning'),
-  algoBadge:        document.getElementById('da-algo-badge'),
-  avgDiff:          document.getElementById('da-avg-diff'),
-  agreementBadge:   document.getElementById('da-agreement-badge'),
+  cobusBadge:      document.getElementById('da-cobus-badge'),
+  cobusReasoning:  document.getElementById('da-cobus-reasoning'),
+  mariusBadge:     document.getElementById('da-marius-badge'),
+  mariusReasoning: document.getElementById('da-marius-reasoning'),
+  algoBadge:       document.getElementById('da-algo-badge'),
+  avgDiff:         document.getElementById('da-avg-diff'),
+  agreementBadge:  document.getElementById('da-agreement-badge'),
+
+  note:            document.getElementById('da-note'),
+  saveNote:        document.getElementById('da-save-note'),
+  noteSaved:       document.getElementById('da-note-saved'),
 };
 
 // =====================
@@ -75,6 +81,7 @@ async function loadImage(idx) {
   const base = `/uploads/${state.set.name}/${row.filename}`;
   els.imgOriginal.src = `${base}/original.jpg`;
   els.imgFpc.src      = `${base}/fpc_result.jpg`;
+  els.imgGrid.src     = `${base}/grid_overlay.jpg`;
 
   // Scores
   setBadge(els.cobusBadge,  row.scores['cobus']);
@@ -99,10 +106,15 @@ async function loadImage(idx) {
     els.agreementBadge.className   = 'da-agreement-badge badge-disagree';
   }
 
+  // Notes
+  els.note.value = row.pieter_note || '';
+  els.noteSaved.classList.add('hidden');
+
   // Reset grid
   disableGrid();
   els.toggleGrid.checked = false;
   state.gridEnabled = false;
+  showFpc();
 
   // Fetch metadata for grid hover
   state.metadata = null;
@@ -123,11 +135,32 @@ function setBadge(el, score) {
 }
 
 // =====================
-//  Grid hover
+//  Image swap helpers
 // =====================
-function getFpcBounds() {
+function showFpc() {
+  els.imgFpc.style.display  = '';
+  els.imgGrid.style.display = 'none';
+  els.fpcLabel.textContent  = 'FPC Result';
+}
+
+function showGridOverlay() {
+  els.imgFpc.style.display  = 'none';
+  els.imgGrid.style.display = '';
+  els.fpcLabel.textContent  = 'Grid Overlay';
+}
+
+// The "active" image — the one currently shown in the FPC panel
+function activeImg() {
+  return state.gridEnabled ? els.imgGrid : els.imgFpc;
+}
+
+// =====================
+//  Grid hover
+//  Uses grid_overlay.jpg dimensions (same coordinate system as cell_size_px)
+// =====================
+function getGridBounds() {
+  const img        = els.imgGrid;   // always use grid image for coordinate math
   const container  = els.fpcContainer;
-  const img        = els.imgFpc;
   const containerW = container.clientWidth;
   const containerH = container.clientHeight;
   const naturalW   = img.naturalWidth  || 1;
@@ -142,33 +175,11 @@ function getFpcBounds() {
   return { displayW, displayH, offsetX, offsetY, scale };
 }
 
-function drawGridLines() {
-  if (!state.metadata?.grid) return;
-
-  const canvas    = els.gridCanvas;
-  const container = els.fpcContainer;
-  canvas.width    = container.clientWidth;
-  canvas.height   = container.clientHeight;
-
-  const bounds   = getFpcBounds();
-  const cellSize = state.metadata.grid.cell_size_px;
-  const cellDisp = cellSize * bounds.scale;
-  const ctx      = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-  ctx.lineWidth   = 1;
-
-  for (let c = 0; c * cellDisp <= bounds.displayW + 1; c++) {
-    const x = bounds.offsetX + c * cellDisp;
-    ctx.beginPath(); ctx.moveTo(x, bounds.offsetY);
-    ctx.lineTo(x, bounds.offsetY + bounds.displayH); ctx.stroke();
-  }
-  for (let r = 0; r * cellDisp <= bounds.displayH + 1; r++) {
-    const y = bounds.offsetY + r * cellDisp;
-    ctx.beginPath(); ctx.moveTo(bounds.offsetX, y);
-    ctx.lineTo(bounds.offsetX + bounds.displayW, y); ctx.stroke();
-  }
+function clearCanvas() {
+  const canvas = els.gridCanvas;
+  canvas.width  = els.fpcContainer.clientWidth;
+  canvas.height = els.fpcContainer.clientHeight;
+  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function onMouseMove(e) {
@@ -178,13 +189,13 @@ function onMouseMove(e) {
   const rect   = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
-  const bounds = getFpcBounds();
+  const bounds = getGridBounds();
 
   if (
     mouseX < bounds.offsetX || mouseX > bounds.offsetX + bounds.displayW ||
     mouseY < bounds.offsetY || mouseY > bounds.offsetY + bounds.displayH
   ) {
-    drawGridLines();
+    clearCanvas();
     hideTooltip();
     return;
   }
@@ -196,14 +207,14 @@ function onMouseMove(e) {
   const row      = Math.floor(imgY / cellSize);
   const cell     = state.metadata.grid.cells.find(c => c.row === row && c.col === col);
 
-  if (!cell) { drawGridLines(); hideTooltip(); return; }
+  if (!cell) { clearCanvas(); hideTooltip(); return; }
 
   const ctx      = canvas.getContext('2d');
+  clearCanvas();
   const cellDisp = cellSize * bounds.scale;
   const cellX    = bounds.offsetX + col * cellDisp;
   const cellY    = bounds.offsetY + row * cellDisp;
 
-  drawGridLines();
   ctx.save();
   ctx.fillStyle   = cell.excluded ? 'rgba(255,80,80,0.18)' : 'rgba(255,255,255,0.15)';
   ctx.fillRect(cellX, cellY, cellDisp, cellDisp);
@@ -216,16 +227,15 @@ function onMouseMove(e) {
     ? `Cell (${row},${col}) — Excluded`
     : `Cell (${row},${col}) — FPC: ${cell.fpc !== undefined ? cell.fpc.toFixed(1) + '%' : 'N/A'}`;
 
-  const tip = els.tooltip;
-  tip.textContent  = text;
-  tip.style.left   = `${e.clientX + 14}px`;
-  tip.style.top    = `${e.clientY - 28}px`;
-  tip.style.position = 'fixed';
-  tip.classList.remove('hidden');
+  els.tooltip.textContent   = text;
+  els.tooltip.style.left    = `${e.clientX + 14}px`;
+  els.tooltip.style.top     = `${e.clientY - 28}px`;
+  els.tooltip.style.position = 'fixed';
+  els.tooltip.classList.remove('hidden');
 }
 
 function onMouseLeave() {
-  drawGridLines();
+  clearCanvas();
   hideTooltip();
 }
 
@@ -235,24 +245,40 @@ function hideTooltip() {
 
 function enableGrid() {
   if (!state.metadata?.grid) return;
-  if (els.imgFpc.complete && els.imgFpc.naturalWidth > 0) {
-    drawGridLines();
-  } else {
-    els.imgFpc.onload = () => { drawGridLines(); els.imgFpc.onload = null; };
-  }
+  showGridOverlay();
+  clearCanvas();
   els.gridCanvas.style.pointerEvents = 'all';
   els.gridCanvas.addEventListener('mousemove',  onMouseMove);
   els.gridCanvas.addEventListener('mouseleave', onMouseLeave);
 }
 
 function disableGrid() {
-  const canvas = els.gridCanvas;
-  const ctx    = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  canvas.style.pointerEvents = 'none';
-  canvas.removeEventListener('mousemove',  onMouseMove);
-  canvas.removeEventListener('mouseleave', onMouseLeave);
+  clearCanvas();
+  els.gridCanvas.style.pointerEvents = 'none';
+  els.gridCanvas.removeEventListener('mousemove',  onMouseMove);
+  els.gridCanvas.removeEventListener('mouseleave', onMouseLeave);
   hideTooltip();
+}
+
+// =====================
+//  Save note
+// =====================
+async function saveNote() {
+  const row = state.tableData[state.currentIndex];
+  if (!row) return;
+  const note = els.note.value.trim();
+
+  await fetch('/api/ratings/note', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ image_id: row.image_id, note }),
+  });
+
+  // Update local state so it persists when navigating
+  state.tableData[state.currentIndex].pieter_note = note || null;
+
+  els.noteSaved.classList.remove('hidden');
+  setTimeout(() => els.noteSaved.classList.add('hidden'), 2000);
 }
 
 // =====================
@@ -276,11 +302,14 @@ function bindEvents() {
       enableGrid();
     } else {
       disableGrid();
+      showFpc();
     }
   });
 
+  els.saveNote.addEventListener('click', saveNote);
+
   window.addEventListener('resize', () => {
-    if (state.gridEnabled) drawGridLines();
+    if (state.gridEnabled) clearCanvas();
   });
 
   document.addEventListener('keydown', e => {
@@ -292,8 +321,6 @@ function bindEvents() {
 function navigate(dir) {
   const next = state.currentIndex + dir;
   if (next < 0 || next >= state.tableData.length) return;
-  // Keep original toggle state, reset grid
-  els.panelOriginal.classList.toggle('hidden', !els.toggleOriginal.checked);
   loadImage(next);
 }
 

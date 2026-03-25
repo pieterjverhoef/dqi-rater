@@ -33,11 +33,12 @@
           </div>
         </div>
 
-        <!-- FPC panel (always visible) -->
+        <!-- FPC / Grid panel -->
         <div class="da-img-panel" id="da-panel-fpc">
-          <span class="panel-label">FPC Result</span>
+          <span class="panel-label" id="da-fpc-label">FPC Result</span>
           <div class="panel-container" id="da-fpc-container">
-            <img id="da-img-fpc" alt="fpc result" />
+            <img id="da-img-fpc"  alt="fpc result" />
+            <img id="da-img-grid" alt="grid overlay" style="display:none; max-width:100%; max-height:100%; object-fit:contain;" />
             <canvas id="da-grid-canvas"></canvas>
             <div id="da-tooltip" class="hover-tooltip hidden"></div>
           </div>
@@ -90,6 +91,18 @@
       </div>
 
       <div id="da-agreement-badge" class="da-agreement-badge"></div>
+
+      <hr class="da-divider" />
+
+      <div class="detail-notes-block">
+        <label class="detail-notes-label">Pieter's notes</label>
+        <textarea id="da-note" class="detail-notes-textarea"
+                  placeholder="Add your analysis notes here…"></textarea>
+        <div class="detail-notes-footer">
+          <button id="da-save-note" class="btn btn-sm">Save Note</button>
+          <span id="da-note-saved" class="detail-note-saved hidden">✓ Saved</span>
+        </div>
+      </div>
 
     </aside>
 
