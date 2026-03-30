@@ -115,7 +115,7 @@ if (fs.existsSync(UPLOADS_DIR)) {
       if (fs.existsSync(metaPath)) {
         try {
           const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-          if (!meta.cv_rating) continue;
+          if (!meta.cv_rating && !meta.moran_rating_v2) continue;
           algorithmScore = meta.algorithm_score ?? null;
         } catch { continue; }
       } else { continue; }

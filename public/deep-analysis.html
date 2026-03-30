@@ -62,35 +62,72 @@
     <!-- Right: sidebar -->
     <aside class="da-sidebar">
 
-      <div class="da-rater-block">
-        <h3 class="da-rater-name">Cobus</h3>
-        <span id="da-cobus-badge" class="score-badge s0">—</span>
-        <p id="da-cobus-reasoning" class="da-reasoning"></p>
+      <!-- Experts side-by-side -->
+      <div class="da-experts-row">
+        <div class="da-expert-block">
+          <h3 class="da-rater-name">Cobus</h3>
+          <span id="da-cobus-badge" class="score-badge s0">—</span>
+          <p id="da-cobus-reasoning" class="da-reasoning"></p>
+        </div>
+        <div class="da-expert-block">
+          <h3 class="da-rater-name">Marius</h3>
+          <span id="da-marius-badge" class="score-badge s0">—</span>
+          <p id="da-marius-reasoning" class="da-reasoning"></p>
+        </div>
       </div>
 
       <hr class="da-divider" />
 
-      <div class="da-rater-block">
-        <h3 class="da-rater-name">Marius</h3>
-        <span id="da-marius-badge" class="score-badge s0">—</span>
-        <p id="da-marius-reasoning" class="da-reasoning"></p>
+      <!-- Algorithm + agreement -->
+      <div class="da-algo-row">
+        <div>
+          <h3 class="da-rater-name">Algorithm</h3>
+          <span id="da-algo-badge" class="score-badge s0">—</span>
+        </div>
+        <div class="da-right-col">
+          <div class="da-avg-inline">
+            <span class="da-avg-label">Avg diff</span>
+            <span id="da-avg-diff" class="da-avg-value">—</span>
+          </div>
+          <div id="da-agreement-badge" class="da-agreement-badge"></div>
+        </div>
       </div>
 
-      <hr class="da-divider" />
-
-      <div class="da-rater-block">
-        <h3 class="da-rater-name">Algorithm</h3>
-        <span id="da-algo-badge" class="score-badge s0">—</span>
+      <!-- Moran detail block (hidden for CV sets) -->
+      <div id="da-moran-section" class="hidden">
+        <hr class="da-divider" />
+        <h3 class="da-rater-name" style="padding-top:10px;">Moran's Analysis</h3>
+        <table class="da-moran-table">
+          <tr>
+            <td class="da-moran-label">Moran's I</td>
+            <td id="da-morans-i" class="da-moran-value">—</td>
+          </tr>
+          <tr>
+            <td class="da-moran-label">V1</td>
+            <td><span id="da-moran-v1" class="score-badge s0">—</span></td>
+          </tr>
+          <tr>
+            <td class="da-moran-label">V2 <span class="da-moran-default">(default)</span></td>
+            <td><span id="da-moran-v2" class="score-badge s0">—</span></td>
+          </tr>
+          <tr>
+            <td class="da-moran-label">V3</td>
+            <td><span id="da-moran-v3" class="score-badge s0">—</span></td>
+          </tr>
+          <tr>
+            <td class="da-moran-label">FPC</td>
+            <td id="da-moran-fpc" class="da-moran-value">—</td>
+          </tr>
+          <tr>
+            <td class="da-moran-label">Cells</td>
+            <td id="da-moran-cells" class="da-moran-value">—</td>
+          </tr>
+          <tr>
+            <td class="da-moran-label">Reliable</td>
+            <td id="da-moran-reliable" class="da-moran-value">—</td>
+          </tr>
+        </table>
       </div>
-
-      <hr class="da-divider" />
-
-      <div class="da-avg-row">
-        <span class="da-avg-label">Avg vs Algo</span>
-        <span id="da-avg-diff" class="da-avg-value">—</span>
-      </div>
-
-      <div id="da-agreement-badge" class="da-agreement-badge"></div>
 
       <hr class="da-divider" />
 

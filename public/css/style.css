@@ -1027,7 +1027,7 @@ textarea#reasoning:focus {
   line-height: 1.5;
   padding: 8px 10px;
   resize: vertical;
-  min-height: 120px;
+  min-height: 70px;
   font-family: inherit;
   transition: border-color 0.15s;
 }
@@ -1167,63 +1167,200 @@ textarea#reasoning:focus {
 
 /* Sidebar */
 .da-sidebar {
-  width: 280px;
+  width: 340px;
   flex-shrink: 0;
   border-left: 1px solid #2e3550;
-  padding: 20px 18px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 0;
   overflow-y: auto;
   background: #1a1f2e;
 }
+
+/* Experts side-by-side */
+.da-experts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px 0;
+}
+.da-expert-block {
+  background: #252b3b;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* Algorithm + agreement on one row */
+.da-algo-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 10px 0;
+  gap: 10px;
+}
+.da-right-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.da-avg-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .da-rater-block {
-  padding: 14px 0;
+  padding: 10px 0;
 }
 .da-rater-name {
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #7a8499;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .da-reasoning {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #7a8499;
   font-style: italic;
   line-height: 1.4;
-  margin-top: 8px;
+  margin-top: 6px;
+  word-break: break-word;
 }
 .da-divider {
   border: none;
   border-top: 1px solid #2e3550;
   margin: 0;
 }
-.da-avg-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 0 8px;
-}
 .da-avg-label {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: #9aa0b0;
   font-weight: 500;
 }
 .da-avg-value {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #c8d0e0;
 }
 .da-agreement-badge {
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 10px;
   text-align: center;
-  margin-top: 4px;
 }
 .da-agreement-badge.badge-agree    { background: #1a5c30; color: #88ffaa; }
 .da-agreement-badge.badge-disagree { background: #5c1a1a; color: #ffaaaa; }
+
+/* =====================
+   Change Set button (rate page)
+   ===================== */
+.btn-change-set {
+  display: block;
+  width: 100%;
+  padding: 7px 12px;
+  margin-bottom: 14px;
+  background: transparent;
+  border: 1px solid #3a4060;
+  border-radius: 6px;
+  color: #7a8499;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-change-set:hover {
+  border-color: #4caf7d;
+  color: #4caf7d;
+}
+
+/* =====================
+   Moran version tooltip (rate page)
+   ===================== */
+.algo-score-row {
+  position: relative;
+}
+
+.moran-version-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 200;
+  background: #1a1f2e;
+  border: 1px solid #3a4060;
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 220px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  pointer-events: auto;
+}
+
+.moran-tt-line {
+  font-size: 0.85rem;
+  padding: 3px 0;
+  font-weight: 500;
+}
+
+.moran-tt-current {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+/* =====================
+   Moran version select (dashboard)
+   ===================== */
+.moran-version-select {
+  margin-left: 8px;
+  font-size: 0.78rem;
+  background: #252b3b;
+  color: #c0c8d8;
+  border: 1px solid #3a4060;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.moran-version-select:focus {
+  outline: none;
+  border-color: #4caf7d;
+}
+
+/* =====================
+   Moran detail table (deep analysis)
+   ===================== */
+.da-moran-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.da-moran-table tr {
+  border-bottom: 1px solid #2e3550;
+}
+
+.da-moran-table tr:last-child {
+  border-bottom: none;
+}
+
+.da-moran-label {
+  font-size: 0.78rem;
+  color: #7a8499;
+  padding: 3px 8px 3px 0;
+  white-space: nowrap;
+  width: 45%;
+}
+
+.da-moran-default {
+  font-size: 0.72rem;
+  color: #4a5470;
+}
+
+.da-moran-value {
+  font-size: 0.82rem;
+  color: #c0c8d8;
+  padding: 3px 0;
+}
 .da-agreement-badge.badge-neutral  { background: #2e3550; color: #7a8499; }

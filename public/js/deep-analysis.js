@@ -4,6 +4,8 @@
 const state = {
   set:          null,
   tableData:    [],
+  isMoranSet:   false,
+  allMetadata:  {},
   currentIndex: 0,
   metadata:     null,
   gridEnabled:  false,
@@ -12,39 +14,56 @@ const state = {
 const SCORE_LABELS = { 1: '1 Unacceptable', 2: '2 Risk', 3: '3 Acceptable', 4: '4 Good' };
 const SCORE_CLASS  = { 1: 's1', 2: 's2', 3: 's3', 4: 's4' };
 
+const MORAN_RATING_CLASS = {
+  'Good':         's4',
+  'Acceptable':   's3',
+  'Risk':         's2',
+  'Unacceptable': 's1',
+};
+
 // =====================
 //  DOM refs
 // =====================
 const els = {
-  btnBack:         document.getElementById('da-back'),
-  imageName:       document.getElementById('da-image-name'),
-  pos:             document.getElementById('da-pos'),
-  btnPrev:         document.getElementById('da-prev'),
-  btnNext:         document.getElementById('da-next'),
+  btnBack:          document.getElementById('da-back'),
+  imageName:        document.getElementById('da-image-name'),
+  pos:              document.getElementById('da-pos'),
+  btnPrev:          document.getElementById('da-prev'),
+  btnNext:          document.getElementById('da-next'),
 
-  panelOriginal:   document.getElementById('da-panel-original'),
-  imgOriginal:     document.getElementById('da-img-original'),
-  imgFpc:          document.getElementById('da-img-fpc'),
-  imgGrid:         document.getElementById('da-img-grid'),
-  fpcLabel:        document.getElementById('da-fpc-label'),
-  fpcContainer:    document.getElementById('da-fpc-container'),
-  gridCanvas:      document.getElementById('da-grid-canvas'),
-  tooltip:         document.getElementById('da-tooltip'),
+  panelOriginal:    document.getElementById('da-panel-original'),
+  imgOriginal:      document.getElementById('da-img-original'),
+  imgFpc:           document.getElementById('da-img-fpc'),
+  imgGrid:          document.getElementById('da-img-grid'),
+  fpcLabel:         document.getElementById('da-fpc-label'),
+  fpcContainer:     document.getElementById('da-fpc-container'),
+  gridCanvas:       document.getElementById('da-grid-canvas'),
+  tooltip:          document.getElementById('da-tooltip'),
 
-  toggleOriginal:  document.getElementById('da-toggle-original'),
-  toggleGrid:      document.getElementById('da-toggle-grid'),
+  toggleOriginal:   document.getElementById('da-toggle-original'),
+  toggleGrid:       document.getElementById('da-toggle-grid'),
 
-  cobusBadge:      document.getElementById('da-cobus-badge'),
-  cobusReasoning:  document.getElementById('da-cobus-reasoning'),
-  mariusBadge:     document.getElementById('da-marius-badge'),
-  mariusReasoning: document.getElementById('da-marius-reasoning'),
-  algoBadge:       document.getElementById('da-algo-badge'),
-  avgDiff:         document.getElementById('da-avg-diff'),
-  agreementBadge:  document.getElementById('da-agreement-badge'),
+  cobusBadge:       document.getElementById('da-cobus-badge'),
+  cobusReasoning:   document.getElementById('da-cobus-reasoning'),
+  mariusBadge:      document.getElementById('da-marius-badge'),
+  mariusReasoning:  document.getElementById('da-marius-reasoning'),
+  algoBadge:        document.getElementById('da-algo-badge'),
+  avgDiff:          document.getElementById('da-avg-diff'),
+  agreementBadge:   document.getElementById('da-agreement-badge'),
 
-  note:            document.getElementById('da-note'),
-  saveNote:        document.getElementById('da-save-note'),
-  noteSaved:       document.getElementById('da-note-saved'),
+  // Moran section
+  moranSection:     document.getElementById('da-moran-section'),
+  moransI:          document.getElementById('da-morans-i'),
+  moranV1:          document.getElementById('da-moran-v1'),
+  moranV2:          document.getElementById('da-moran-v2'),
+  moranV3:          document.getElementById('da-moran-v3'),
+  moranFpc:         document.getElementById('da-moran-fpc'),
+  moranCells:       document.getElementById('da-moran-cells'),
+  moranReliable:    document.getElementById('da-moran-reliable'),
+
+  note:             document.getElementById('da-note'),
+  saveNote:         document.getElementById('da-save-note'),
+  noteSaved:        document.getElementById('da-note-saved'),
 };
 
 // =====================
@@ -55,8 +74,11 @@ function init() {
   const storedDA   = sessionStorage.getItem('deepAnalysis');
   if (!storedUser || !storedDA) { window.location.href = '/dashboard.html'; return; }
 
-  state.set       = JSON.parse(storedDA).set;
-  state.tableData = JSON.parse(storedDA).tableData;
+  const da        = JSON.parse(storedDA);
+  state.set        = da.set;
+  state.tableData  = da.tableData;
+  state.isMoranSet = da.isMoranSet  || false;
+  state.allMetadata = da.allMetadata || {};
 
   bindEvents();
   loadImage(0);
@@ -71,19 +93,16 @@ async function loadImage(idx) {
 
   state.currentIndex = idx;
 
-  // Header
   els.imageName.textContent = row.filename;
   els.pos.textContent       = `${idx + 1} / ${state.tableData.length}`;
   els.btnPrev.disabled      = idx === 0;
   els.btnNext.disabled      = idx === state.tableData.length - 1;
 
-  // Images
   const base = `/uploads/${state.set.name}/${row.filename}`;
   els.imgOriginal.src = `${base}/original.jpg`;
   els.imgFpc.src      = `${base}/fpc_result.jpg`;
   els.imgGrid.src     = `${base}/grid_overlay.jpg`;
 
-  // Scores
   setBadge(els.cobusBadge,  row.scores['cobus']);
   setBadge(els.mariusBadge, row.scores['marius']);
   setBadge(els.algoBadge,   row.algorithm_score);
@@ -91,10 +110,8 @@ async function loadImage(idx) {
   els.cobusReasoning.textContent  = row.reasoning['cobus']  ? `"${row.reasoning['cobus']}"` : '';
   els.mariusReasoning.textContent = row.reasoning['marius'] ? `"${row.reasoning['marius']}"` : '';
 
-  // Avg vs Algo
   els.avgDiff.textContent = row.avgDiff !== null ? `±${row.avgDiff.toFixed(2)}` : '—';
 
-  // Agreement
   if (!row.fullyRated) {
     els.agreementBadge.textContent = 'Incomplete';
     els.agreementBadge.className   = 'da-agreement-badge badge-neutral';
@@ -106,11 +123,9 @@ async function loadImage(idx) {
     els.agreementBadge.className   = 'da-agreement-badge badge-disagree';
   }
 
-  // Notes
   els.note.value = row.pieter_note || '';
   els.noteSaved.classList.add('hidden');
 
-  // Reset grid
   disableGrid();
   els.toggleGrid.checked = false;
   state.gridEnabled = false;
@@ -122,6 +137,56 @@ async function loadImage(idx) {
     const res = await fetch(`/api/images/metadata/${state.set.id}/${row.filename}`);
     state.metadata = res.ok ? await res.json() : null;
   } catch { state.metadata = null; }
+
+  // Show or hide moran section
+  if (state.isMoranSet) {
+    updateMoranSection(row.filename);
+  } else {
+    els.moranSection.classList.add('hidden');
+  }
+}
+
+function updateMoranSection(filename) {
+  const m = state.allMetadata[filename] || state.metadata || null;
+  if (!m || m.set_type !== 'moran') {
+    els.moranSection.classList.add('hidden');
+    return;
+  }
+
+  els.moranSection.classList.remove('hidden');
+
+  els.moransI.textContent = m.morans_i !== null && m.morans_i !== undefined
+    ? Number(m.morans_i).toFixed(4) : '—';
+
+  setMoranBadge(els.moranV1, m.moran_rating_v1);
+  setMoranBadge(els.moranV2, m.moran_rating_v2);
+  setMoranBadge(els.moranV3, m.moran_rating_v3);
+
+  els.moranFpc.textContent   = m.fpc_percent !== null && m.fpc_percent !== undefined
+    ? `${Number(m.fpc_percent).toFixed(2)}%` : '—';
+  els.moranCells.textContent = m.moran_n_cells ?? '—';
+
+  if (m.moran_reliable === true) {
+    els.moranReliable.textContent  = '✓ Reliable';
+    els.moranReliable.style.color  = '#2ecc71';
+  } else if (m.moran_reliable === false) {
+    const warn = m.moran_warning ? ` — ${m.moran_warning}` : '';
+    els.moranReliable.textContent  = `⚠ Unreliable${warn}`;
+    els.moranReliable.style.color  = '#e67e22';
+  } else {
+    els.moranReliable.textContent  = '—';
+    els.moranReliable.style.color  = '';
+  }
+}
+
+function setMoranBadge(el, rating) {
+  if (!rating) {
+    el.textContent = '—';
+    el.className   = 'score-badge s0';
+    return;
+  }
+  el.textContent = rating;
+  el.className   = `score-badge ${MORAN_RATING_CLASS[rating] || 's0'}`;
 }
 
 function setBadge(el, score) {
@@ -149,17 +214,11 @@ function showGridOverlay() {
   els.fpcLabel.textContent  = 'Grid Overlay';
 }
 
-// The "active" image — the one currently shown in the FPC panel
-function activeImg() {
-  return state.gridEnabled ? els.imgGrid : els.imgFpc;
-}
-
 // =====================
 //  Grid hover
-//  Uses grid_overlay.jpg dimensions (same coordinate system as cell_size_px)
 // =====================
 function getGridBounds() {
-  const img        = els.imgGrid;   // always use grid image for coordinate math
+  const img        = els.imgGrid;
   const container  = els.fpcContainer;
   const containerW = container.clientWidth;
   const containerH = container.clientHeight;
@@ -227,9 +286,9 @@ function onMouseMove(e) {
     ? `Cell (${row},${col}) — Excluded`
     : `Cell (${row},${col}) — FPC: ${cell.fpc !== undefined ? cell.fpc.toFixed(1) + '%' : 'N/A'}`;
 
-  els.tooltip.textContent   = text;
-  els.tooltip.style.left    = `${e.clientX + 14}px`;
-  els.tooltip.style.top     = `${e.clientY - 28}px`;
+  els.tooltip.textContent    = text;
+  els.tooltip.style.left     = `${e.clientX + 14}px`;
+  els.tooltip.style.top      = `${e.clientY - 28}px`;
   els.tooltip.style.position = 'fixed';
   els.tooltip.classList.remove('hidden');
 }
@@ -274,7 +333,6 @@ async function saveNote() {
     body:    JSON.stringify({ image_id: row.image_id, note }),
   });
 
-  // Update local state so it persists when navigating
   state.tableData[state.currentIndex].pieter_note = note || null;
 
   els.noteSaved.classList.remove('hidden');

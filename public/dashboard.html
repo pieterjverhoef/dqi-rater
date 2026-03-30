@@ -30,6 +30,11 @@
       <p id="no-sets-msg" class="hint hidden">No image sets available yet.</p>
     </div>
 
+    <!-- Back button (hidden until set selected) -->
+    <div id="change-set-bar" class="hidden" style="margin-bottom:16px;">
+      <button id="btn-change-set" class="btn-change-set">← Change Set</button>
+    </div>
+
     <!-- Summary cards (hidden until set is selected) -->
     <div id="dash-content" class="hidden">
 
@@ -58,7 +63,14 @@
           <thead>
             <tr>
               <th>Image</th>
-              <th>Algorithm</th>
+              <th>
+                Algorithm
+                <select id="moran-version-select" class="moran-version-select hidden" title="Select Moran version">
+                  <option value="v1">V1</option>
+                  <option value="v2" selected>V2</option>
+                  <option value="v3">V3</option>
+                </select>
+              </th>
               <th>Cobus</th>
               <th>Marius</th>
               <th>Agreement</th>

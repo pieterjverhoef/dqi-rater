@@ -2,29 +2,36 @@
 //  State
 // =====================
 const state = {
-  user:       null,
-  sets:       [],
-  currentSet: null,
-  tableData:  [],
+  user:         null,
+  sets:         [],
+  currentSet:   null,
+  isMoranSet:   false,
+  moranVersion: 'v2',      // 'v1' | 'v2' | 'v3'
+  allMetadata:  {},        // { filename: metadata } — only for moran sets
+  rawData:      [],        // raw rows from dashboard API
+  tableData:    [],        // processed rows
 };
 
 // =====================
 //  DOM refs
 // =====================
 const els = {
-  btnLogout:        document.getElementById('btn-logout'),
-  btnExportCsv:     document.getElementById('btn-export-csv'),
-  btnExportJson:    document.getElementById('btn-export-json'),
-  btnDeepAnalysis:  document.getElementById('btn-deep-analysis'),
-  setSelectorDiv:   document.getElementById('set-selector'),
-  setList:          document.getElementById('set-list'),
-  noSetsMsg:        document.getElementById('no-sets-msg'),
-  dashContent:      document.getElementById('dash-content'),
-  cardTotal:        document.getElementById('card-total'),
-  cardRated:        document.getElementById('card-rated'),
-  cardAgreement:    document.getElementById('card-agreement'),
-  cardAvgDiff:      document.getElementById('card-avg-diff'),
-  tbody:            document.getElementById('dash-tbody'),
+  btnLogout:          document.getElementById('btn-logout'),
+  btnExportCsv:       document.getElementById('btn-export-csv'),
+  btnExportJson:      document.getElementById('btn-export-json'),
+  btnDeepAnalysis:    document.getElementById('btn-deep-analysis'),
+  setSelectorDiv:     document.getElementById('set-selector'),
+  setList:            document.getElementById('set-list'),
+  noSetsMsg:          document.getElementById('no-sets-msg'),
+  changeSetBar:       document.getElementById('change-set-bar'),
+  btnChangeSet:       document.getElementById('btn-change-set'),
+  dashContent:        document.getElementById('dash-content'),
+  cardTotal:          document.getElementById('card-total'),
+  cardRated:          document.getElementById('card-rated'),
+  cardAgreement:      document.getElementById('card-agreement'),
+  cardAvgDiff:        document.getElementById('card-avg-diff'),
+  tbody:              document.getElementById('dash-tbody'),
+  moranVersionSelect: document.getElementById('moran-version-select'),
 };
 
 // =====================
@@ -67,15 +74,54 @@ async function loadSets() {
 }
 
 async function loadDashboard(set) {
-  state.currentSet = set;
+  state.currentSet  = set;
+  state.isMoranSet  = false;
+  state.allMetadata = {};
+  state.moranVersion = 'v2';
+  els.moranVersionSelect.value = 'v2';
+
   els.setSelectorDiv.classList.add('hidden');
   els.dashContent.classList.remove('hidden');
   els.btnDeepAnalysis.classList.remove('hidden');
+  els.changeSetBar.classList.remove('hidden');
 
-  const res = await fetch(`/api/ratings/dashboard/${set.id}`);
-  const raw = await res.json();
+  // Load dashboard ratings data + images list in parallel
+  const [dashRes, imgRes] = await Promise.all([
+    fetch(`/api/ratings/dashboard/${set.id}`),
+    fetch(`/api/images/set/${set.id}`),
+  ]);
+  state.rawData    = await dashRes.json();
+  const imagesList = await imgRes.json();
 
-  state.tableData = processData(raw);
+  // Detect set type from first image metadata
+  if (imagesList.length > 0) {
+    try {
+      const res = await fetch(`/api/images/metadata/${set.id}/${imagesList[0].filename}`);
+      if (res.ok) {
+        const firstMeta = await res.json();
+        state.isMoranSet = firstMeta?.set_type === 'moran';
+      }
+    } catch { /* stay false */ }
+  }
+
+  // If moran set: fetch all metadata in parallel for version switching + export
+  if (state.isMoranSet) {
+    els.moranVersionSelect.classList.remove('hidden');
+    const metaResponses = await Promise.all(
+      imagesList.map(img =>
+        fetch(`/api/images/metadata/${set.id}/${img.filename}`)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    );
+    imagesList.forEach((img, i) => {
+      state.allMetadata[img.filename] = metaResponses[i];
+    });
+  } else {
+    els.moranVersionSelect.classList.add('hidden');
+  }
+
+  state.tableData = processData(state.rawData);
   renderTable(state.tableData);
   renderSummary(state.tableData);
 }
@@ -83,8 +129,21 @@ async function loadDashboard(set) {
 // =====================
 //  Data processing
 // =====================
+const MORAN_RATING_TO_SCORE = {
+  'Good': 4, 'Acceptable': 3, 'Risk': 2, 'Unacceptable': 1,
+};
+
+function getAlgoScoreForRow(filename, dbAlgoScore) {
+  if (!state.isMoranSet) return dbAlgoScore;
+  const meta = state.allMetadata[filename];
+  if (!meta) return dbAlgoScore;
+  const ratingKey = `moran_rating_${state.moranVersion}`;
+  const rating    = meta[ratingKey];
+  return MORAN_RATING_TO_SCORE[rating] ?? dbAlgoScore;
+}
+
 function processData(raw) {
-  const raters = ['cobus', 'marius'];
+  const raters   = ['cobus', 'marius'];
   const imageMap = {};
 
   for (const row of raw) {
@@ -108,17 +167,18 @@ function processData(raw) {
   }
 
   return Object.values(imageMap).map(img => {
+    const algoScore   = getAlgoScoreForRow(img.filename, img.algorithm_score);
     const raterScores = raters.map(r => img.scores[r] ?? null).filter(s => s !== null);
     const fullyRated  = raterScores.length === raters.length;
     const allSame     = fullyRated && new Set(raterScores).size === 1;
 
     let avgDiff = null;
-    if (img.algorithm_score && raterScores.length > 0) {
-      const diffs = raterScores.map(s => Math.abs(s - img.algorithm_score));
+    if (algoScore && raterScores.length > 0) {
+      const diffs = raterScores.map(s => Math.abs(s - algoScore));
       avgDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
     }
 
-    return { ...img, fullyRated, allSame, avgDiff };
+    return { ...img, algorithm_score: algoScore, fullyRated, allSame, avgDiff };
   }).sort((a, b) => a.filename.localeCompare(b.filename));
 }
 
@@ -199,23 +259,61 @@ function renderSummary(rows) {
 function exportCSV() {
   if (!state.tableData.length) return;
 
-  const header = [
-    'filename', 'algorithm_score',
-    'cobus_score', 'cobus_reasoning',
-    'marius_score', 'marius_reasoning',
-    'agree', 'avg_diff_vs_algo', 'pieter_note',
-  ];
-  const rows = state.tableData.map(r => [
-    r.filename,
-    r.algorithm_score ?? '',
-    r.scores['cobus']    ?? '',
-    r.reasoning['cobus'] ?? '',
-    r.scores['marius']    ?? '',
-    r.reasoning['marius'] ?? '',
-    r.allSame ? 'yes' : (r.fullyRated ? 'no' : 'incomplete'),
-    r.avgDiff !== null ? r.avgDiff.toFixed(2) : '',
-    r.pieter_note ?? '',
-  ]);
+  let header, rows;
+
+  if (state.isMoranSet) {
+    header = [
+      'filename',
+      'morans_i', 'moran_v1', 'moran_v2', 'moran_v3',
+      'moran_reliable', 'moran_n_cells', 'moran_warning',
+      'fpc_percent', 'threshold',
+      `algorithm_score_${state.moranVersion}`,
+      'cobus_score', 'cobus_reasoning',
+      'marius_score', 'marius_reasoning',
+      'agree', 'avg_diff_vs_algo', 'pieter_note',
+    ];
+    rows = state.tableData.map(r => {
+      const m = state.allMetadata[r.filename] || {};
+      return [
+        r.filename,
+        m.morans_i ?? '',
+        m.moran_rating_v1 ?? '',
+        m.moran_rating_v2 ?? '',
+        m.moran_rating_v3 ?? '',
+        m.moran_reliable ?? '',
+        m.moran_n_cells  ?? '',
+        m.moran_warning  ?? '',
+        m.fpc_percent    ?? '',
+        m.threshold      ?? '',
+        r.algorithm_score ?? '',
+        r.scores['cobus']     ?? '',
+        r.reasoning['cobus']  ?? '',
+        r.scores['marius']    ?? '',
+        r.reasoning['marius'] ?? '',
+        r.allSame ? 'yes' : (r.fullyRated ? 'no' : 'incomplete'),
+        r.avgDiff !== null ? r.avgDiff.toFixed(2) : '',
+        r.pieter_note ?? '',
+      ];
+    });
+  } else {
+    header = [
+      'filename', 'algorithm_score',
+      'cobus_score', 'cobus_reasoning',
+      'marius_score', 'marius_reasoning',
+      'agree', 'avg_diff_vs_algo', 'pieter_note',
+    ];
+    rows = state.tableData.map(r => [
+      r.filename,
+      r.algorithm_score ?? '',
+      r.scores['cobus']     ?? '',
+      r.reasoning['cobus']  ?? '',
+      r.scores['marius']    ?? '',
+      r.reasoning['marius'] ?? '',
+      r.allSame ? 'yes' : (r.fullyRated ? 'no' : 'incomplete'),
+      r.avgDiff !== null ? r.avgDiff.toFixed(2) : '',
+      r.pieter_note ?? '',
+    ]);
+  }
 
   const csv = [header, ...rows]
     .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
@@ -225,7 +323,18 @@ function exportCSV() {
 
 function exportJSON() {
   if (!state.tableData.length) return;
-  const json = JSON.stringify(state.tableData, null, 2);
+
+  let output;
+  if (state.isMoranSet) {
+    output = state.tableData.map(r => ({
+      ...r,
+      moran_data: state.allMetadata[r.filename] || null,
+    }));
+  } else {
+    output = state.tableData;
+  }
+
+  const json = JSON.stringify(output, null, 2);
   download(`dqi-ratings-${state.currentSet.name}.json`, json, 'application/json');
 }
 
@@ -251,13 +360,33 @@ function bindEvents() {
   els.btnExportCsv.addEventListener('click',  exportCSV);
   els.btnExportJson.addEventListener('click', exportJSON);
 
+  els.btnChangeSet.addEventListener('click', () => {
+    els.dashContent.classList.add('hidden');
+    els.btnDeepAnalysis.classList.add('hidden');
+    els.changeSetBar.classList.add('hidden');
+    els.moranVersionSelect.classList.add('hidden');
+    els.setSelectorDiv.classList.remove('hidden');
+    state.currentSet = null;
+    loadSets();
+  });
+
   els.btnDeepAnalysis.addEventListener('click', () => {
     if (!state.currentSet || !state.tableData.length) return;
     sessionStorage.setItem('deepAnalysis', JSON.stringify({
-      set:       state.currentSet,
-      tableData: state.tableData,
+      set:          state.currentSet,
+      tableData:    state.tableData,
+      isMoranSet:   state.isMoranSet,
+      allMetadata:  state.allMetadata,
     }));
     window.location.href = '/deep-analysis.html';
+  });
+
+  // Moran version dropdown
+  els.moranVersionSelect.addEventListener('change', () => {
+    state.moranVersion = els.moranVersionSelect.value;
+    state.tableData    = processData(state.rawData);
+    renderTable(state.tableData);
+    renderSummary(state.tableData);
   });
 }
 

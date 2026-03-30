@@ -76,7 +76,7 @@ router.post('/register', async (c) => {
     if (fs.existsSync(metaPath)) {
       try {
         const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-        if (!meta.cv_rating) { incomplete++; continue; }
+        if (!meta.cv_rating && !meta.moran_rating_v2) { incomplete++; continue; }
         algorithmScore = meta.algorithm_score ?? null;
       } catch { incomplete++; continue; }
     } else { incomplete++; continue; }
