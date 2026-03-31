@@ -92,6 +92,9 @@ if (fs.existsSync(UPLOADS_DIR)) {
   const insertImage = db.prepare(
     'INSERT OR IGNORE INTO images (set_id, filename, algorithm_score) VALUES (?, ?, ?)'
   );
+  const updateScore = db.prepare(
+    'UPDATE images SET algorithm_score = ? WHERE set_id = ? AND filename = ? AND algorithm_score IS NULL'
+  );
 
   for (const setName of setDirs) {
     insertSet.run(setName);
@@ -121,6 +124,8 @@ if (fs.existsSync(UPLOADS_DIR)) {
       } else { continue; }
 
       insertImage.run(set.id, folder, algorithmScore);
+      // Also update images that were previously registered with null algorithm_score
+      if (algorithmScore !== null) updateScore.run(algorithmScore, set.id, folder);
       registered++;
     }
     if (registered > 0) console.log(`Auto-registered ${registered} images in set "${setName}"`);

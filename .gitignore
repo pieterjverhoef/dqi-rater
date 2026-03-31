@@ -1,4 +1,9 @@
 node_modules/
 database/*.sqlite
-uploads/
 *.db
+
+# Exclude image files but allow metadata.json so server stays in sync
+uploads/**/*.jpg
+uploads/**/*.jpeg
+uploads/**/*.png
+uploads/**/*.mp4
