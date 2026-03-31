@@ -162,8 +162,9 @@ function updateMoranSection(filename) {
   setMoranBadge(els.moranV2, m.moran_rating_v2);
   setMoranBadge(els.moranV3, m.moran_rating_v3);
 
-  els.moranFpc.textContent   = m.fpc_percent !== null && m.fpc_percent !== undefined
-    ? `${Number(m.fpc_percent).toFixed(2)}%` : '—';
+  const fpcVal = m.fpc_percent ?? m.fpc;
+  els.moranFpc.textContent   = fpcVal !== null && fpcVal !== undefined
+    ? `${Number(fpcVal).toFixed(2)}%` : '—';
   els.moranCells.textContent = m.moran_n_cells ?? '—';
 
   if (m.moran_reliable === true) {

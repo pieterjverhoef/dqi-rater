@@ -140,7 +140,7 @@ async function selectSet(set) {
       const res = await fetch(`/api/images/metadata/${set.id}/${state.images[0].filename}`);
       if (res.ok) {
         const firstMeta = await res.json();
-        state.isMoranSet = firstMeta?.set_type === 'moran';
+        state.isMoranSet = firstMeta?.set_type === 'moran' || firstMeta?.morans_i != null;
       }
     } catch { /* stay false */ }
   }

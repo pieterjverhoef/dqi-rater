@@ -99,7 +99,7 @@ async function loadDashboard(set) {
       const res = await fetch(`/api/images/metadata/${set.id}/${imagesList[0].filename}`);
       if (res.ok) {
         const firstMeta = await res.json();
-        state.isMoranSet = firstMeta?.set_type === 'moran';
+        state.isMoranSet = firstMeta?.set_type === 'moran' || firstMeta?.morans_i != null;
       }
     } catch { /* stay false */ }
   }
@@ -283,7 +283,7 @@ function exportCSV() {
         m.moran_reliable ?? '',
         m.moran_n_cells  ?? '',
         m.moran_warning  ?? '',
-        m.fpc_percent    ?? '',
+        (m.fpc_percent ?? m.fpc) ?? '',
         m.threshold      ?? '',
         r.algorithm_score ?? '',
         r.scores['cobus']     ?? '',

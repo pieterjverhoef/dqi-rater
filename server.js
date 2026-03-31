@@ -119,7 +119,13 @@ if (fs.existsSync(UPLOADS_DIR)) {
         try {
           const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
           if (!meta.cv_rating && !meta.moran_rating_v2) continue;
-          algorithmScore = meta.algorithm_score ?? null;
+          if (meta.algorithm_score != null) {
+            algorithmScore = meta.algorithm_score;
+          } else if (meta.moran_rating_v2) {
+            // Raw moran format: calculate score from rating label
+            const MORAN_SCORE = { 'Good': 4, 'Acceptable': 3, 'Risk': 2, 'Unacceptable': 1 };
+            algorithmScore = MORAN_SCORE[meta.moran_rating_v2] ?? null;
+          }
         } catch { continue; }
       } else { continue; }
 
