@@ -139,13 +139,19 @@ async function selectSet(set) {
   state.images = await imgRes.json();
   state.ratings = await ratingsRes.json();
 
-  // Detect set type from first image metadata
+  // Detect set type from first image metadata.
+  // Primary signal: set_type field in metadata.json.
+  // Fallback for DQI: presence of `dqi` or `dqi_composite` field — needed
+  // in case set_type is missing (e.g. older metadata schema).
   if (state.images.length > 0) {
     try {
       const res = await fetch(`/api/images/metadata/${set.id}/${state.images[0].filename}`);
       if (res.ok) {
         const firstMeta = await res.json();
-        state.isDqiSet   = firstMeta?.set_type === 'dqi';
+        const looksLikeDqi = firstMeta?.set_type === 'dqi'
+                          || firstMeta?.dqi_composite != null
+                          || firstMeta?.cv_norm != null;
+        state.isDqiSet   = !!looksLikeDqi;
         state.isMoranSet = !state.isDqiSet && (firstMeta?.set_type === 'moran' || firstMeta?.morans_i != null);
       }
     } catch { /* stay false */ }

@@ -95,13 +95,18 @@ async function loadDashboard(set) {
   state.rawData    = await dashRes.json();
   const imagesList = await imgRes.json();
 
-  // Detect set type from first image metadata
+  // Detect set type from first image metadata.
+  // Primary signal: set_type field. Fallback for DQI: presence of `dqi`
+  // or `cv_norm` field (only DQI metadata has those).
   if (imagesList.length > 0) {
     try {
       const res = await fetch(`/api/images/metadata/${set.id}/${imagesList[0].filename}`);
       if (res.ok) {
         const firstMeta = await res.json();
-        state.isDqiSet   = firstMeta?.set_type === 'dqi';
+        const looksLikeDqi = firstMeta?.set_type === 'dqi'
+                          || firstMeta?.dqi_composite != null
+                          || firstMeta?.cv_norm != null;
+        state.isDqiSet   = !!looksLikeDqi;
         state.isMoranSet = !state.isDqiSet && (firstMeta?.set_type === 'moran' || firstMeta?.morans_i != null);
       }
     } catch { /* stay false */ }
