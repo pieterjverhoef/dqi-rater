@@ -6,8 +6,9 @@ const state = {
   sets:         [],
   currentSet:   null,
   isMoranSet:   false,
+  isDqiSet:     false,
   moranVersion: 'v2',      // 'v1' | 'v2' | 'v3'
-  allMetadata:  {},        // { filename: metadata } — only for moran sets
+  allMetadata:  {},        // { filename: metadata } — populated for moran AND dqi sets
   rawData:      [],        // raw rows from dashboard API
   tableData:    [],        // processed rows
 };
@@ -76,6 +77,7 @@ async function loadSets() {
 async function loadDashboard(set) {
   state.currentSet  = set;
   state.isMoranSet  = false;
+  state.isDqiSet    = false;
   state.allMetadata = {};
   state.moranVersion = 'v2';
   els.moranVersionSelect.value = 'v2';
@@ -99,14 +101,18 @@ async function loadDashboard(set) {
       const res = await fetch(`/api/images/metadata/${set.id}/${imagesList[0].filename}`);
       if (res.ok) {
         const firstMeta = await res.json();
-        state.isMoranSet = firstMeta?.set_type === 'moran' || firstMeta?.morans_i != null;
+        state.isDqiSet   = firstMeta?.set_type === 'dqi';
+        state.isMoranSet = !state.isDqiSet && (firstMeta?.set_type === 'moran' || firstMeta?.morans_i != null);
       }
     } catch { /* stay false */ }
   }
 
-  // If moran set: fetch all metadata in parallel for version switching + export
-  if (state.isMoranSet) {
-    els.moranVersionSelect.classList.remove('hidden');
+  // For moran AND dqi sets: fetch all metadata in parallel (needed for the
+  // extended CSV/JSON export with raw metric values)
+  if (state.isMoranSet || state.isDqiSet) {
+    if (state.isMoranSet) els.moranVersionSelect.classList.remove('hidden');
+    else                   els.moranVersionSelect.classList.add('hidden');
+
     const metaResponses = await Promise.all(
       imagesList.map(img =>
         fetch(`/api/images/metadata/${set.id}/${img.filename}`)
@@ -134,6 +140,14 @@ const MORAN_RATING_TO_SCORE = {
 };
 
 function getAlgoScoreForRow(filename, dbAlgoScore) {
+  if (state.isDqiSet) {
+    // DQI set: db has algorithm_score=null (blind rating) — pull the
+    // algorithm DQI from metadata so the dashboard can compare experts
+    // to the algorithm's prediction.
+    const meta = state.allMetadata[filename];
+    if (!meta) return dbAlgoScore;
+    return meta.dqi ?? dbAlgoScore;
+  }
   if (!state.isMoranSet) return dbAlgoScore;
   const meta = state.allMetadata[filename];
   if (!meta) return dbAlgoScore;
@@ -185,12 +199,34 @@ function processData(raw) {
 // =====================
 //  Render table
 // =====================
+// Legacy 1-4 labels (cv-test-set, moran-test-set)
 const SCORE_LABELS = { 1: '1 Unacceptable', 2: '2 Risk', 3: '3 Acceptable', 4: '4 Good' };
 const SCORE_CLASS  = { 1: 's1', 2: 's2', 3: 's3', 4: 's4' };
+
+// 0-5 integer (dqi-test-set)
+const DQI_SCORE_LABELS = {
+  0: '0 No spray',
+  1: '1 Very bad',
+  2: '2 Bad',
+  3: '3 Moderate',
+  4: '4 Good',
+  5: '5 Excellent',
+};
+const DQI_SCORE_CLASS = {
+  0: 's0', 1: 's1', 2: 's2', 3: 's3', 4: 's4', 5: 's5',
+};
 
 function scoreBadge(score) {
   if (score === null || score === undefined)
     return '<span class="score-badge s0">—</span>';
+  if (state.isDqiSet) {
+    const rounded = Math.round(score);
+    const cls = DQI_SCORE_CLASS[rounded] || 's0';
+    const lbl = DQI_SCORE_LABELS[rounded] !== undefined
+      ? (Number.isInteger(score) ? DQI_SCORE_LABELS[rounded] : `${score}`)
+      : score;
+    return `<span class="score-badge ${cls}">${lbl}</span>`;
+  }
   return `<span class="score-badge ${SCORE_CLASS[score]}">${SCORE_LABELS[score]}</span>`;
 }
 
@@ -261,7 +297,63 @@ function exportCSV() {
 
   let header, rows;
 
-  if (state.isMoranSet) {
+  if (state.isDqiSet) {
+    // Full export for DQI calibration: raw metrics, normalized values,
+    // composite + algorithm DQI, plus both raters' scores and reasoning.
+    header = [
+      'filename', 'fpc_percent', 'threshold',
+      'cv', 'cv_rating', 'cv_n_cells', 'cv_reliable',
+      'morans_i', 'moran_rating_v1', 'moran_rating_v2', 'moran_rating_v3', 'moran_reliable',
+      'qcr_v1', 'qcr_v1_rating', 'qcr_v2', 'qcr_v2_rating', 'qcr_v3', 'qcr_v3_rating',
+      'cv_norm', 'mi_norm', 'qcr_norm',
+      'dqi_composite', 'dqi_algorithm',
+      'cobus_score', 'cobus_reasoning',
+      'marius_score', 'marius_reasoning',
+      'avg_rater_score', 'agree', 'avg_diff_vs_algo', 'pieter_note',
+    ];
+    rows = state.tableData.map(r => {
+      const m = state.allMetadata[r.filename] || {};
+      const cobusScore = r.scores['cobus'];
+      const mariusScore = r.scores['marius'];
+      const both = [cobusScore, mariusScore].filter(s => s !== undefined && s !== null);
+      const avgRater = both.length > 0
+        ? (both.reduce((a, b) => a + b, 0) / both.length).toFixed(2)
+        : '';
+      return [
+        r.filename,
+        m.fpc_percent       ?? '',
+        m.threshold         ?? '',
+        m.cv                ?? '',
+        m.cv_rating         ?? '',
+        m.cv_n_cells        ?? '',
+        m.cv_reliable       ?? '',
+        m.morans_i          ?? '',
+        m.moran_rating_v1   ?? '',
+        m.moran_rating_v2   ?? '',
+        m.moran_rating_v3   ?? '',
+        m.moran_reliable    ?? '',
+        m.qcr_v1            ?? '',
+        m.qcr_v1_rating     ?? '',
+        m.qcr_v2            ?? '',
+        m.qcr_v2_rating     ?? '',
+        m.qcr_v3            ?? '',
+        m.qcr_v3_rating     ?? '',
+        m.cv_norm           ?? '',
+        m.mi_norm           ?? '',
+        m.qcr_norm          ?? '',
+        m.dqi_composite     ?? '',
+        m.dqi               ?? '',
+        cobusScore          ?? '',
+        r.reasoning['cobus']  ?? '',
+        mariusScore         ?? '',
+        r.reasoning['marius'] ?? '',
+        avgRater,
+        r.allSame ? 'yes' : (r.fullyRated ? 'no' : 'incomplete'),
+        r.avgDiff !== null ? r.avgDiff.toFixed(2) : '',
+        r.pieter_note ?? '',
+      ];
+    });
+  } else if (state.isMoranSet) {
     header = [
       'filename',
       'morans_i', 'moran_v1', 'moran_v2', 'moran_v3',
@@ -325,7 +417,12 @@ function exportJSON() {
   if (!state.tableData.length) return;
 
   let output;
-  if (state.isMoranSet) {
+  if (state.isDqiSet) {
+    output = state.tableData.map(r => ({
+      ...r,
+      dqi_metadata: state.allMetadata[r.filename] || null,
+    }));
+  } else if (state.isMoranSet) {
     output = state.tableData.map(r => ({
       ...r,
       moran_data: state.allMetadata[r.filename] || null,

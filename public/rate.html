@@ -116,7 +116,9 @@
 
         <div class="rating-section">
           <p class="section-label">Your rating</p>
-          <div class="rating-buttons">
+
+          <!-- Legacy 1-4 buttons (used by cv-test-set and moran-test-set) -->
+          <div class="rating-buttons" id="rating-buttons-legacy">
             <button class="rating-btn score-1" data-score="1">
               <span class="score-number">1</span>
               <span class="score-label">Unacceptable</span>
@@ -132,6 +134,34 @@
             <button class="rating-btn score-4" data-score="4">
               <span class="score-number">4</span>
               <span class="score-label">Good</span>
+            </button>
+          </div>
+
+          <!-- 0-5 integer scale (used by dqi-test-set) -->
+          <div class="rating-buttons-dqi hidden" id="rating-buttons-dqi">
+            <button class="rating-btn-dqi score-0" data-score="0">
+              <span class="score-number">0</span>
+              <span class="score-label">No spray</span>
+            </button>
+            <button class="rating-btn-dqi score-1" data-score="1">
+              <span class="score-number">1</span>
+              <span class="score-label">Very bad</span>
+            </button>
+            <button class="rating-btn-dqi score-2" data-score="2">
+              <span class="score-number">2</span>
+              <span class="score-label">Bad</span>
+            </button>
+            <button class="rating-btn-dqi score-3" data-score="3">
+              <span class="score-number">3</span>
+              <span class="score-label">Moderate</span>
+            </button>
+            <button class="rating-btn-dqi score-4" data-score="4">
+              <span class="score-number">4</span>
+              <span class="score-label">Good</span>
+            </button>
+            <button class="rating-btn-dqi score-5" data-score="5">
+              <span class="score-number">5</span>
+              <span class="score-label">Excellent</span>
             </button>
           </div>
         </div>

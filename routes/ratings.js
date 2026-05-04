@@ -23,11 +23,14 @@ router.post('/', async (c) => {
   const db = c.get('db');
   const { user_id, image_id, score, reasoning } = await c.req.json();
 
-  if (!user_id || !image_id || !score) {
+  if (!user_id || !image_id || score === undefined || score === null) {
     return c.json({ error: 'user_id, image_id and score are required' }, 400);
   }
-  if (score < 1 || score > 4) {
-    return c.json({ error: 'Score must be between 1 and 4' }, 400);
+  // Integer scores 0..5: covers the legacy 1..4 used by cv- and moran-test-set
+  // AND the new dqi-test-set 0..5.
+  const scoreNum = Number(score);
+  if (!Number.isInteger(scoreNum) || scoreNum < 0 || scoreNum > 5) {
+    return c.json({ error: 'Score must be an integer between 0 and 5' }, 400);
   }
 
   db.prepare(`

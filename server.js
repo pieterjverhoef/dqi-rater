@@ -121,8 +121,10 @@ if (fs.existsSync(UPLOADS_DIR)) {
           if (!meta.cv_rating && !meta.moran_rating_v2) continue;
           if (meta.algorithm_score != null) {
             algorithmScore = meta.algorithm_score;
-          } else if (meta.moran_rating_v2) {
-            // Raw moran format: calculate score from rating label
+          } else if (meta.set_type !== 'dqi' && meta.moran_rating_v2) {
+            // Raw moran format: calculate score from rating label.
+            // Skipped for dqi-test-set: those have set_type=='dqi' and want a
+            // null algorithm_score in the DB (the dashboard pulls meta.dqi instead).
             const MORAN_SCORE = { 'Good': 4, 'Acceptable': 3, 'Risk': 2, 'Unacceptable': 1 };
             algorithmScore = MORAN_SCORE[meta.moran_rating_v2] ?? null;
           }

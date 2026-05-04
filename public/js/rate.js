@@ -6,6 +6,7 @@ const state = {
   sets: [],
   currentSet: null,
   isMoranSet: false,
+  isDqiSet: false,
   images: [],
   ratings: {},      // { image_id: { score, reasoning } }
   currentIndex: 0,
@@ -59,6 +60,9 @@ const els = {
   toggleScore:          document.getElementById('toggle-score'),
 
   ratingBtns:           document.querySelectorAll('.rating-btn'),
+  ratingBtnsDqi:        document.querySelectorAll('.rating-btn-dqi'),
+  ratingBlockLegacy:    document.getElementById('rating-buttons-legacy'),
+  ratingBlockDqi:       document.getElementById('rating-buttons-dqi'),
   reasoning:            document.getElementById('reasoning'),
 
   btnPrev:              document.getElementById('btn-prev'),
@@ -120,6 +124,7 @@ function showSetSelector() {
 async function selectSet(set) {
   state.currentSet = set;
   state.isMoranSet = false;
+  state.isDqiSet   = false;
   els.setNameDisplay.textContent = set.name;
   els.setSelectorDiv.classList.add('hidden');
   els.ratingUI.classList.remove('hidden');
@@ -140,13 +145,32 @@ async function selectSet(set) {
       const res = await fetch(`/api/images/metadata/${set.id}/${state.images[0].filename}`);
       if (res.ok) {
         const firstMeta = await res.json();
-        state.isMoranSet = firstMeta?.set_type === 'moran' || firstMeta?.morans_i != null;
+        state.isDqiSet   = firstMeta?.set_type === 'dqi';
+        state.isMoranSet = !state.isDqiSet && (firstMeta?.set_type === 'moran' || firstMeta?.morans_i != null);
       }
     } catch { /* stay false */ }
   }
 
+  // Show the right rating-button block (legacy 1-4 vs DQI 0-5 with halves)
+  if (state.isDqiSet) {
+    els.ratingBlockLegacy.classList.add('hidden');
+    els.ratingBlockDqi.classList.remove('hidden');
+  } else {
+    els.ratingBlockLegacy.classList.remove('hidden');
+    els.ratingBlockDqi.classList.add('hidden');
+  }
+
   // Apply toggle defaults based on set type
-  if (state.isMoranSet) {
+  if (state.isDqiSet) {
+    // DQI set: blind rating — image only, no algorithm score, no grid by default
+    els.toggleOriginal.checked = false;
+    els.toggleGrid.checked = false;
+    els.toggleScore.checked = false;
+    state.showGrid  = false;
+    state.showScore = false;
+    els.panelOriginal.style.display = 'none';
+    els.panelGrid.style.display     = 'none';
+  } else if (state.isMoranSet) {
     // Moran set: all toggles off
     els.toggleOriginal.checked = false;
     els.toggleGrid.checked = false;
@@ -213,8 +237,10 @@ async function showImage(index) {
 
   const existing = state.ratings[image.id];
   els.ratingBtns.forEach(btn => btn.classList.remove('selected'));
+  els.ratingBtnsDqi.forEach(btn => btn.classList.remove('selected'));
   if (existing) {
-    const btn = document.querySelector(`.rating-btn[data-score="${existing.score}"]`);
+    const selector = state.isDqiSet ? '.rating-btn-dqi' : '.rating-btn';
+    const btn = document.querySelector(`${selector}[data-score="${existing.score}"]`);
     if (btn) btn.classList.add('selected');
     els.reasoning.value = existing.reasoning || '';
   } else {
@@ -262,6 +288,27 @@ const MORAN_RATING_TO_SCORE = {
 function updateAlgoScore(score) {
   // Always hide tooltip when refreshing
   els.moranVersionTooltip.classList.add('hidden');
+
+  // For DQI sets the DB column algorithm_score is null (blind rating).
+  // When the rater toggles "Show Algorithm Score" ON, fall back to the
+  // algorithm DQI from metadata so something useful shows up.
+  if (state.isDqiSet) {
+    if (!state.showScore) {
+      els.algoScoreRow.style.display = 'none';
+      return;
+    }
+    const dqi = state.metadata?.dqi;
+    if (dqi === null || dqi === undefined) {
+      els.algoScoreRow.style.display = 'none';
+      return;
+    }
+    els.algoScoreRow.style.display = '';
+    const cls = `s${Math.round(dqi)}`;
+    els.algoScoreBadge.className = `score-badge ${cls}`;
+    els.algoScoreBadge.textContent = `DQI: ${Number(dqi).toFixed(1)} / 5`;
+    els.cvValue.textContent = '';
+    return;
+  }
 
   if (!state.showScore || score === null || score === undefined) {
     els.algoScoreRow.style.display = 'none';
@@ -518,13 +565,25 @@ function bindEvents() {
     els.moranVersionTooltip.classList.add('hidden');
   });
 
-  // Rating buttons
+  // Rating buttons (legacy 1-4)
   els.ratingBtns.forEach(btn => {
     btn.addEventListener('click', async () => {
       const score = parseInt(btn.dataset.score);
       const image = state.images[state.currentIndex];
       if (!image) return;
       els.ratingBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      await submitRating(image.id, score, els.reasoning.value.trim());
+    });
+  });
+
+  // Rating buttons (DQI 0-5 integer)
+  els.ratingBtnsDqi.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const score = parseInt(btn.dataset.score);
+      const image = state.images[state.currentIndex];
+      if (!image) return;
+      els.ratingBtnsDqi.forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       await submitRating(image.id, score, els.reasoning.value.trim());
     });
@@ -542,17 +601,29 @@ function bindEvents() {
 
   window.addEventListener('keydown', async (e) => {
     if (document.activeElement === els.reasoning) return;
-    if (!['1','2','3','4'].includes(e.key)) return;
 
-    const score = parseInt(e.key);
     const image = state.images[state.currentIndex];
     if (!image) return;
 
-    els.ratingBtns.forEach(b => b.classList.remove('selected'));
-    const btn = document.querySelector(`.rating-btn[data-score="${score}"]`);
-    if (btn) btn.classList.add('selected');
+    if (state.isDqiSet) {
+      // DQI: 0-5 integer keys
+      if (!['0','1','2','3','4','5'].includes(e.key)) return;
+      const score = parseInt(e.key);
 
-    await submitRating(image.id, score, els.reasoning.value.trim());
+      els.ratingBtnsDqi.forEach(b => b.classList.remove('selected'));
+      const btn = document.querySelector(`.rating-btn-dqi[data-score="${score}"]`);
+      if (btn) btn.classList.add('selected');
+      await submitRating(image.id, score, els.reasoning.value.trim());
+    } else {
+      // Legacy 1-4
+      if (!['1','2','3','4'].includes(e.key)) return;
+      const score = parseInt(e.key);
+
+      els.ratingBtns.forEach(b => b.classList.remove('selected'));
+      const btn = document.querySelector(`.rating-btn[data-score="${score}"]`);
+      if (btn) btn.classList.add('selected');
+      await submitRating(image.id, score, els.reasoning.value.trim());
+    }
   });
 
   els.btnResetRatings.addEventListener('click', async () => {

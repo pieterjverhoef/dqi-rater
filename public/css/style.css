@@ -467,6 +467,7 @@ button[type="submit"]:disabled,
 .score-badge.s2 { background-color: #7a4a10; color: #ffcc88; }
 .score-badge.s3 { background-color: #6a6010; color: #ffee88; }
 .score-badge.s4 { background-color: #1a5c30; color: #88ffaa; }
+.score-badge.s5 { background-color: #145a25; color: #aaff99; }
 .score-badge.s0 { background-color: #2e3550; color: #7a8499; }
 
 /* Rating buttons */
@@ -525,6 +526,64 @@ button[type="submit"]:disabled,
 .rating-btn.score-2.selected { background-color: #d4700a; border-color: #f08820; color: #fff; }
 .rating-btn.score-3.selected { background-color: #b8a800; border-color: #e0d000; color: #111; }
 .rating-btn.score-4.selected { background-color: #27ae60; border-color: #40d878; color: #fff; }
+
+/* ====================================================================
+   DQI-test-set rating buttons — 0..5 integer scale.
+   Visual style mirrors the legacy buttons (number + label, muted -> hover
+   -> bright-selected). 3 columns x 2 rows so all 6 buttons fit on screen
+   without horizontal scroll. Gradient purple -> red -> orange -> yellow ->
+   green gives a visual ordering cue from "no spray" to "excellent".
+   ==================================================================== */
+.rating-buttons-dqi {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.rating-btn-dqi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 6px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  gap: 3px;
+  font-family: inherit;
+}
+
+.rating-btn-dqi .score-number { font-size: 1.4rem; font-weight: 700; line-height: 1; }
+.rating-btn-dqi .score-label  { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.02em; }
+
+/* Unselected — muted gradient (worst to best) */
+.rating-btn-dqi.score-0 { background-color: #2e2030; color: #c8a0b0; border-color: #50384a; }
+.rating-btn-dqi.score-1 { background-color: #3d1a1a; color: #e08080; border-color: #5a2a2a; }
+.rating-btn-dqi.score-2 { background-color: #3d2a10; color: #e0a060; border-color: #5a3a18; }
+.rating-btn-dqi.score-3 { background-color: #3a3510; color: #d8c860; border-color: #555010; }
+.rating-btn-dqi.score-4 { background-color: #1a3a22; color: #70d890; border-color: #265a34; }
+.rating-btn-dqi.score-5 { background-color: #143a28; color: #80e8a0; border-color: #225e36; }
+
+/* Hover */
+.rating-btn-dqi.score-0:hover { background-color: #463250; border-color: #806090; }
+.rating-btn-dqi.score-1:hover { background-color: #5a2020; border-color: #e05050; }
+.rating-btn-dqi.score-2:hover { background-color: #5a3a18; border-color: #e09040; }
+.rating-btn-dqi.score-3:hover { background-color: #504c12; border-color: #d8c040; }
+.rating-btn-dqi.score-4:hover { background-color: #245038; border-color: #40c870; }
+.rating-btn-dqi.score-5:hover { background-color: #1e5238; border-color: #50d880; }
+
+/* Selected — bright */
+.rating-btn-dqi.score-0.selected { background-color: #6e5080; border-color: #b890c8; color: #fff; }
+.rating-btn-dqi.score-1.selected { background-color: #c0392b; border-color: #e05040; color: #fff; }
+.rating-btn-dqi.score-2.selected { background-color: #d4700a; border-color: #f08820; color: #fff; }
+.rating-btn-dqi.score-3.selected { background-color: #b8a800; border-color: #e0d000; color: #111; }
+.rating-btn-dqi.score-4.selected { background-color: #27ae60; border-color: #40d878; color: #fff; }
+.rating-btn-dqi.score-5.selected { background-color: #1f9655; border-color: #40c878; color: #fff; }
+
+/* Hide helper used by JS to swap which button block is visible */
+.rating-buttons-dqi.hidden,
+.rating-buttons.hidden { display: none; }
 
 /* Reasoning */
 .optional {
