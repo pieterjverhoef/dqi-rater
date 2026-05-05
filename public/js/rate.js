@@ -269,13 +269,19 @@ async function showImage(index) {
   }
 }
 
+// Bump this when uploads/ images change so browsers fetch fresh JPGs.
+// (Plain JPG URLs cache forever; the JS/CSS asset cache-bust doesn't
+// reach images loaded dynamically by JS.)
+const IMAGE_CACHE_BUSTER = 'dqi-v2';
+
 function updateImageSrcs() {
   const image = state.images[state.currentIndex];
   if (!image || !state.currentSet) return;
   const base = `/uploads/${state.currentSet.name}/${image.filename}`;
-  els.imgOriginal.src = `${base}/original.jpg`;
-  els.imgFpc.src      = `${base}/fpc_result.jpg`;
-  els.imgGrid.src     = `${base}/grid_overlay.jpg`;
+  const v = `?v=${IMAGE_CACHE_BUSTER}`;
+  els.imgOriginal.src = `${base}/original.jpg${v}`;
+  els.imgFpc.src      = `${base}/fpc_result.jpg${v}`;
+  els.imgGrid.src     = `${base}/grid_overlay.jpg${v}`;
 }
 
 // FPC % is shown for DQI test sets only — Cobus asked for it as a

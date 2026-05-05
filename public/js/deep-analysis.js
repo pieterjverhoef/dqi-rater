@@ -99,9 +99,12 @@ async function loadImage(idx) {
   els.btnNext.disabled      = idx === state.tableData.length - 1;
 
   const base = `/uploads/${state.set.name}/${row.filename}`;
-  els.imgOriginal.src = `${base}/original.jpg`;
-  els.imgFpc.src      = `${base}/fpc_result.jpg`;
-  els.imgGrid.src     = `${base}/grid_overlay.jpg`;
+  // Cache-bust JPGs so updates land in raters' browsers (plain JPG URLs
+  // cache forever; the asset cache-bust on JS/CSS doesn't apply here).
+  const v = `?v=dqi-v2`;
+  els.imgOriginal.src = `${base}/original.jpg${v}`;
+  els.imgFpc.src      = `${base}/fpc_result.jpg${v}`;
+  els.imgGrid.src     = `${base}/grid_overlay.jpg${v}`;
 
   setBadge(els.cobusBadge,  row.scores['cobus']);
   setBadge(els.mariusBadge, row.scores['marius']);
