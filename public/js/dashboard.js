@@ -20,6 +20,7 @@ const els = {
   btnLogout:          document.getElementById('btn-logout'),
   btnExportCsv:       document.getElementById('btn-export-csv'),
   btnExportJson:      document.getElementById('btn-export-json'),
+  btnSyncDrive:       document.getElementById('btn-sync-drive'),
   btnDeepAnalysis:    document.getElementById('btn-deep-analysis'),
   setSelectorDiv:     document.getElementById('set-selector'),
   setList:            document.getElementById('set-list'),
@@ -440,6 +441,44 @@ function exportJSON() {
   download(`dqi-ratings-${state.currentSet.name}.json`, json, 'application/json');
 }
 
+// Trigger immediate rclone copy from Google Drive. Periodic sync runs
+// every hour anyway; this button lets pieter pull fresh images right
+// after re-uploading dqi-test-set/ to Drive.
+async function triggerDriveSync() {
+  if (!state.user || state.user.username !== 'pieter') {
+    alert('Drive sync is admin-only.');
+    return;
+  }
+
+  const btn = els.btnSyncDrive;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Syncing…';
+
+  try {
+    const res = await fetch('/api/sync/drive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: state.user.id }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Sync failed: ' + (data.error || 'unknown error'));
+    } else if (data.skipped) {
+      alert('Sync skipped: ' + data.reason);
+    } else if (data.ok) {
+      alert(`Sync done in ${(data.duration_s ?? 0).toFixed(1)}s. Refresh the page (Ctrl+Shift+R) to see new images.`);
+    } else {
+      alert('Sync error: ' + (data.error || 'unknown'));
+    }
+  } catch (e) {
+    alert('Sync request failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
 function download(filename, content, type) {
   const blob = new Blob([content], { type });
   const url  = URL.createObjectURL(blob);
@@ -461,6 +500,7 @@ function bindEvents() {
 
   els.btnExportCsv.addEventListener('click',  exportCSV);
   els.btnExportJson.addEventListener('click', exportJSON);
+  els.btnSyncDrive.addEventListener('click',  triggerDriveSync);
 
   els.btnChangeSet.addEventListener('click', () => {
     els.dashContent.classList.add('hidden');

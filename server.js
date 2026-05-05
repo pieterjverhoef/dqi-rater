@@ -10,6 +10,8 @@ import authRoutes from './routes/auth.js';
 import imageRoutes from './routes/images.js';
 import ratingRoutes from './routes/ratings.js';
 import deployRoutes from './routes/deploy.js';
+import syncRoutes from './routes/sync.js';
+import { startPeriodicSync } from './lib/drive_sync.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = new Hono();
@@ -76,6 +78,7 @@ app.route('/api/auth',    authRoutes);
 app.route('/api/images',  imageRoutes);
 app.route('/api/ratings', ratingRoutes);
 app.route('/api/deploy',  deployRoutes);
+app.route('/api/sync',    syncRoutes);
 
 app.use('/uploads/*', serveStatic({ root: './' }));
 app.use('/*', serveStatic({ root: './public' }));
@@ -139,6 +142,12 @@ if (fs.existsSync(UPLOADS_DIR)) {
     if (registered > 0) console.log(`Auto-registered ${registered} images in set "${setName}"`);
   }
 }
+
+// Start the periodic Drive sync. Runs `rclone copy` once an hour so
+// new images uploaded to Drive show up without needing a redeploy.
+// Skips silently if rclone.conf or RCLONE_PATH aren't configured
+// (i.e. in local dev without Drive credentials).
+startPeriodicSync();
 
 serve({ fetch: app.fetch, port: PORT }, () => {
   console.log(`DQI Rater running at http://localhost:${PORT}`);
