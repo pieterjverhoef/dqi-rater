@@ -14,7 +14,12 @@ if [ -f /root/.config/rclone/rclone.conf ]; then
     # metadata.json files that ship in the Git repo (the .gitignore allows
     # JSON, only binary images are excluded). Without metadata.json the rater
     # cannot detect set_type and falls back to the legacy 1..4 UI.
-    rclone copy "${REMOTE}:${REMOTE_PATH}" "/app/uploads" --progress $RCLONE_FLAGS
+    #
+    # Also exclude *.json from copy: even if a stale metadata.json sits in
+    # Drive (e.g. from a previous upload), the Git-shipped version wins.
+    # Metadata is always considered authoritative from the repo.
+    rclone copy "${REMOTE}:${REMOTE_PATH}" "/app/uploads" --progress \
+        --exclude '*.json' --exclude '*.txt' $RCLONE_FLAGS
     echo "Copy complete."
   else
     echo "RCLONE_PATH not set, skipping image sync."
