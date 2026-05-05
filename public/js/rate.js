@@ -63,6 +63,8 @@ const els = {
   ratingBtnsDqi:        document.querySelectorAll('.rating-btn-dqi'),
   ratingBlockLegacy:    document.getElementById('rating-buttons-legacy'),
   ratingBlockDqi:       document.getElementById('rating-buttons-dqi'),
+  fpcInfo:              document.getElementById('fpc-info'),
+  fpcInfoValue:         document.getElementById('fpc-info-value'),
   reasoning:            document.getElementById('reasoning'),
 
   btnPrev:              document.getElementById('btn-prev'),
@@ -239,6 +241,7 @@ async function showImage(index) {
   els.imageFilename.textContent = image.filename;
 
   updateAlgoScore(image.algorithm_score);
+  updateFpcInfo();
   updateImageSrcs();
 
   const existing = state.ratings[image.id];
@@ -273,6 +276,23 @@ function updateImageSrcs() {
   els.imgOriginal.src = `${base}/original.jpg`;
   els.imgFpc.src      = `${base}/fpc_result.jpg`;
   els.imgGrid.src     = `${base}/grid_overlay.jpg`;
+}
+
+// FPC % is shown for DQI test sets only — Cobus asked for it as a
+// permanent reference while rating the 500 images. Hidden for all other
+// sets (cv-test-set / moran-test-set) to keep their layout unchanged.
+function updateFpcInfo() {
+  if (!state.isDqiSet) {
+    els.fpcInfo.classList.add('hidden');
+    return;
+  }
+  const fpc = state.metadata?.fpc_percent;
+  if (fpc === null || fpc === undefined) {
+    els.fpcInfo.classList.add('hidden');
+    return;
+  }
+  els.fpcInfoValue.textContent = `${Number(fpc).toFixed(2)}%`;
+  els.fpcInfo.classList.remove('hidden');
 }
 
 // =====================

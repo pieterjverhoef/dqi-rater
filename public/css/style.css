@@ -440,6 +440,34 @@ button[type="submit"]:disabled,
   word-break: break-all;
 }
 
+/* FPC% reference chip — shown for dqi-test-set images so raters always
+   see the spray-coverage value while judging the image. Hidden for the
+   legacy cv-test-set and moran-test-set. */
+.fpc-info {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background-color: #1f2a40;
+  border: 1px solid #2e3c5a;
+}
+.fpc-info.hidden { display: none; }
+.fpc-info-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #7a8499;
+  letter-spacing: 0.06em;
+}
+.fpc-info-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #6dd0e0;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Algorithm score badge */
 .algo-score-row {
   display: flex;
