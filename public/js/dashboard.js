@@ -467,7 +467,11 @@ async function triggerDriveSync() {
     } else if (data.skipped) {
       alert('Sync skipped: ' + data.reason);
     } else if (data.ok) {
-      alert(`Sync done in ${(data.duration_s ?? 0).toFixed(1)}s. Refresh the page (Ctrl+Shift+R) to see new images.`);
+      const newImg = data.new_images ?? 0;
+      const note = newImg > 0
+        ? `\n+${newImg} new images registered.`
+        : '\nNo new images (Drive content matches existing).';
+      alert(`Sync done in ${(data.duration_s ?? 0).toFixed(1)}s.${note}\n\nRefresh the page (Ctrl+Shift+R) to see updates.`);
     } else {
       alert('Sync error: ' + (data.error || 'unknown'));
     }

@@ -11,7 +11,8 @@ import imageRoutes from './routes/images.js';
 import ratingRoutes from './routes/ratings.js';
 import deployRoutes from './routes/deploy.js';
 import syncRoutes from './routes/sync.js';
-import { startPeriodicSync } from './lib/drive_sync.js';
+import { initDriveSync, startPeriodicSync } from './lib/drive_sync.js';
+import { registerAllImages } from './lib/registry.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = new Hono();
@@ -85,63 +86,15 @@ app.use('/*', serveStatic({ root: './public' }));
 
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
-if (fs.existsSync(UPLOADS_DIR)) {
-  const setDirs = fs.readdirSync(UPLOADS_DIR, { withFileTypes: true })
-    .filter(e => e.isDirectory())
-    .map(e => e.name);
+// Auto-register all complete image folders into the DB. The same logic is
+// reused after every drive sync so newly arrived folders get picked up
+// without needing a server restart.
+registerAllImages(db, UPLOADS_DIR);
 
-  const insertSet = db.prepare('INSERT OR IGNORE INTO image_sets (name) VALUES (?)');
-  const getSet = db.prepare('SELECT * FROM image_sets WHERE name = ?');
-  const insertImage = db.prepare(
-    'INSERT OR IGNORE INTO images (set_id, filename, algorithm_score) VALUES (?, ?, ?)'
-  );
-  const updateScore = db.prepare(
-    'UPDATE images SET algorithm_score = ? WHERE set_id = ? AND filename = ? AND algorithm_score IS NULL'
-  );
-
-  for (const setName of setDirs) {
-    insertSet.run(setName);
-    const set = getSet.get(setName);
-    const setDir = path.join(UPLOADS_DIR, setName);
-
-    const folders = fs.readdirSync(setDir, { withFileTypes: true })
-      .filter(e => e.isDirectory())
-      .map(e => e.name);
-
-    let registered = 0;
-    for (const folder of folders) {
-      const folderPath = path.join(setDir, folder);
-      const hasOriginal = fs.existsSync(path.join(folderPath, 'original.jpg'));
-      const hasFpc = fs.existsSync(path.join(folderPath, 'fpc_result.jpg'));
-      const hasGrid = fs.existsSync(path.join(folderPath, 'grid_overlay.jpg'));
-      if (!hasOriginal || !hasFpc || !hasGrid) continue;
-
-      const metaPath = path.join(folderPath, 'metadata.json');
-      let algorithmScore = null;
-      if (fs.existsSync(metaPath)) {
-        try {
-          const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-          if (!meta.cv_rating && !meta.moran_rating_v2) continue;
-          if (meta.algorithm_score != null) {
-            algorithmScore = meta.algorithm_score;
-          } else if (meta.set_type !== 'dqi' && meta.moran_rating_v2) {
-            // Raw moran format: calculate score from rating label.
-            // Skipped for dqi-test-set: those have set_type=='dqi' and want a
-            // null algorithm_score in the DB (the dashboard pulls meta.dqi instead).
-            const MORAN_SCORE = { 'Good': 4, 'Acceptable': 3, 'Risk': 2, 'Unacceptable': 1 };
-            algorithmScore = MORAN_SCORE[meta.moran_rating_v2] ?? null;
-          }
-        } catch { continue; }
-      } else { continue; }
-
-      insertImage.run(set.id, folder, algorithmScore);
-      // Also update images that were previously registered with null algorithm_score
-      if (algorithmScore !== null) updateScore.run(algorithmScore, set.id, folder);
-      registered++;
-    }
-    if (registered > 0) console.log(`Auto-registered ${registered} images in set "${setName}"`);
-  }
-}
+// Wire the drive-sync to this DB so it can re-register images after
+// a successful copy (without this, newly synced folders would sit on
+// disk but never appear in the rater until the next server restart).
+initDriveSync(db, UPLOADS_DIR);
 
 // Start the periodic Drive sync. Runs `rclone copy` once an hour so
 // new images uploaded to Drive show up without needing a redeploy.
