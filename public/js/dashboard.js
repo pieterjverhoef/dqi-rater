@@ -21,6 +21,7 @@ const els = {
   btnExportCsv:       document.getElementById('btn-export-csv'),
   btnExportJson:      document.getElementById('btn-export-json'),
   btnSyncDrive:       document.getElementById('btn-sync-drive'),
+  btnSyncDiag:        document.getElementById('btn-sync-diag'),
   btnDeepAnalysis:    document.getElementById('btn-deep-analysis'),
   setSelectorDiv:     document.getElementById('set-selector'),
   setList:            document.getElementById('set-list'),
@@ -483,6 +484,37 @@ async function triggerDriveSync() {
   }
 }
 
+// Show what folders are on disk on the live server vs what's in the DB.
+// Helps diagnose "I uploaded N folders to Drive, why aren't they showing".
+async function showDriveDiagnostics() {
+  try {
+    const res = await fetch('/api/sync/diagnostics');
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Diagnostics failed: ' + (data.error || res.status));
+      return;
+    }
+    const lines = [];
+    lines.push(`uploads_dir_exists: ${data.uploads_dir_exists}`);
+    for (const s of (data.sets || [])) {
+      lines.push('');
+      lines.push(`Set "${s.set}":`);
+      lines.push(`  Folders on disk: ${s.folders_on_disk}`);
+      lines.push(`  Images in DB:    ${s.images_in_db}`);
+      lines.push(`  Unregistered:    ${s.unregistered_count}`);
+      if (s.unregistered.length) {
+        lines.push('  First unregistered folders + reasons:');
+        for (const u of s.unregistered) {
+          lines.push(`    - ${u.folder}: ${u.reasons.join(', ')}`);
+        }
+      }
+    }
+    alert(lines.join('\n'));
+  } catch (e) {
+    alert('Diagnostics request failed: ' + e.message);
+  }
+}
+
 function download(filename, content, type) {
   const blob = new Blob([content], { type });
   const url  = URL.createObjectURL(blob);
@@ -505,6 +537,7 @@ function bindEvents() {
   els.btnExportCsv.addEventListener('click',  exportCSV);
   els.btnExportJson.addEventListener('click', exportJSON);
   els.btnSyncDrive.addEventListener('click',  triggerDriveSync);
+  els.btnSyncDiag.addEventListener('click',   showDriveDiagnostics);
 
   els.btnChangeSet.addEventListener('click', () => {
     els.dashContent.classList.add('hidden');
