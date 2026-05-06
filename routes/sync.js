@@ -37,7 +37,20 @@ router.get('/status', (c) => {
 
 router.get('/diagnostics', (c) => {
   const db = c.get('db');
-  const report = { uploads_dir_exists: fs.existsSync(UPLOADS_DIR), sets: [] };
+  const report = {
+    uploads_dir_exists: fs.existsSync(UPLOADS_DIR),
+    image_info: null,
+    sets: [],
+  };
+  // /app/.image-info is written by the Dockerfile at build time. Reading
+  // it tells us when the running image was actually baked and how many
+  // metadata.json files it shipped with — proves whether a redeploy
+  // actually rebuilt or just restarted the existing image.
+  const infoPath = '/app/.image-info';
+  if (fs.existsSync(infoPath)) {
+    try { report.image_info = fs.readFileSync(infoPath, 'utf8').trim(); }
+    catch { /* ignore */ }
+  }
   if (!report.uploads_dir_exists) return c.json(report);
 
   const setDirs = fs.readdirSync(UPLOADS_DIR, { withFileTypes: true })

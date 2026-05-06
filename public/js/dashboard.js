@@ -495,6 +495,10 @@ async function showDriveDiagnostics() {
       return;
     }
     const lines = [];
+    if (data.image_info) {
+      lines.push(`Docker image: ${data.image_info}`);
+      lines.push('');
+    }
     lines.push(`uploads_dir_exists: ${data.uploads_dir_exists}`);
     for (const s of (data.sets || [])) {
       lines.push('');
