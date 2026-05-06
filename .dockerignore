@@ -1,5 +1,15 @@
 node_modules
 database/*.sqlite
-uploads
 .git
 .gitignore
+
+# Exclude binary images from the Docker build context — those come from
+# Google Drive via rclone at container start, not from the repo. But DO
+# include uploads/**/metadata.json (the metric data is authoritative from
+# Git), so we list only the binary types here, not the whole uploads
+# folder. Without this, the live server can't see metadata for any newly
+# added folders that haven't been on Drive long enough to be cached.
+uploads/**/*.jpg
+uploads/**/*.jpeg
+uploads/**/*.png
+uploads/**/*.mp4
