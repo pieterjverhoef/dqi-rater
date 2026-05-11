@@ -305,21 +305,37 @@ function exportCSV() {
   let header, rows;
 
   if (state.isDqiSet) {
-    // Full export for DQI calibration: raw metrics, normalized values,
-    // composite + algorithm DQI, plus both raters' scores and reasoning.
+    // Full export for DQI calibration. Columns grouped for the
+    // calibration workflow: identification, raw metrics + their
+    // supporting stats, normalized values, composite + display DQI,
+    // V3 extraction quality, expert scores, and derived comparisons.
     header = [
-      'filename', 'fpc_percent', 'threshold',
-      'cv', 'cv_rating', 'cv_n_cells', 'cv_reliable',
-      'morans_i', 'moran_rating_v1', 'moran_rating_v2', 'moran_rating_v3', 'moran_reliable',
-      'qcr_v1', 'qcr_v1_rating', 'qcr_v2', 'qcr_v2_rating', 'qcr_v3', 'qcr_v3_rating',
+      // --- Identification + boss reference -------------------------
+      'filename', 'fpc_percent', 'boss_target_fpc', 'extracted_fpc', 'fpc_diff_from_boss',
+      // --- CV ------------------------------------------------------
+      'cv', 'cv_rating', 'cv_mean', 'cv_std', 'cv_n_cells', 'cv_reliable',
+      // --- Moran's I -----------------------------------------------
+      'morans_i', 'moran_rating_v1', 'moran_rating_v2', 'moran_rating_v3',
+      'moran_n_cells', 'moran_reliable',
+      // --- QCR with underlying deviation values ---------------------
+      'qcr_v1', 'qcr_v1_rating', 'qcr_v1_max_dev',
+      'qcr_v2', 'qcr_v2_rating', 'qcr_v2_sum_dev',
+      'qcr_v3', 'qcr_v3_rating',
+      'q1_share', 'q2_share', 'q3_share', 'q4_share',
+      // --- Cobus's normalization (placeholder) ---------------------
       'cv_norm', 'mi_norm', 'qcr_norm',
+      // --- Composite + display DQI ---------------------------------
       'dqi_composite', 'dqi_algorithm',
+      // --- Expert ratings ------------------------------------------
       'cobus_score', 'cobus_reasoning',
       'marius_score', 'marius_reasoning',
-      'avg_rater_score', 'agree', 'avg_diff_vs_algo', 'pieter_note',
+      'avg_rater_score', 'agree', 'avg_diff_vs_algo',
+      // --- Misc ----------------------------------------------------
+      'pieter_note',
     ];
     rows = state.tableData.map(r => {
       const m = state.allMetadata[r.filename] || {};
+      const qs = m.quadrant_shares || {};
       const cobusScore = r.scores['cobus'];
       const mariusScore = r.scores['marius'];
       const both = [cobusScore, mariusScore].filter(s => s !== undefined && s !== null);
@@ -328,32 +344,43 @@ function exportCSV() {
         : '';
       return [
         r.filename,
-        m.fpc_percent       ?? '',
-        m.threshold         ?? '',
-        m.cv                ?? '',
-        m.cv_rating         ?? '',
-        m.cv_n_cells        ?? '',
-        m.cv_reliable       ?? '',
-        m.morans_i          ?? '',
-        m.moran_rating_v1   ?? '',
-        m.moran_rating_v2   ?? '',
-        m.moran_rating_v3   ?? '',
-        m.moran_reliable    ?? '',
-        m.qcr_v1            ?? '',
-        m.qcr_v1_rating     ?? '',
-        m.qcr_v2            ?? '',
-        m.qcr_v2_rating     ?? '',
-        m.qcr_v3            ?? '',
-        m.qcr_v3_rating     ?? '',
-        m.cv_norm           ?? '',
-        m.mi_norm           ?? '',
-        m.qcr_norm          ?? '',
-        m.dqi_composite     ?? '',
-        m.dqi               ?? '',
-        cobusScore          ?? '',
-        r.reasoning['cobus']  ?? '',
-        mariusScore         ?? '',
-        r.reasoning['marius'] ?? '',
+        m.fpc_percent          ?? '',
+        m.boss_target_fpc      ?? '',
+        m.extracted_fpc        ?? '',
+        m.fpc_diff_from_boss   ?? '',
+        m.cv                   ?? '',
+        m.cv_rating            ?? '',
+        m.cv_mean              ?? '',
+        m.cv_std               ?? '',
+        m.cv_n_cells           ?? '',
+        m.cv_reliable          ?? '',
+        m.morans_i             ?? '',
+        m.moran_rating_v1      ?? '',
+        m.moran_rating_v2      ?? '',
+        m.moran_rating_v3      ?? '',
+        m.moran_n_cells        ?? '',
+        m.moran_reliable       ?? '',
+        m.qcr_v1               ?? '',
+        m.qcr_v1_rating        ?? '',
+        m.qcr_v1_max_dev       ?? '',
+        m.qcr_v2               ?? '',
+        m.qcr_v2_rating        ?? '',
+        m.qcr_v2_sum_dev       ?? '',
+        m.qcr_v3               ?? '',
+        m.qcr_v3_rating        ?? '',
+        qs['1']                ?? '',
+        qs['2']                ?? '',
+        qs['3']                ?? '',
+        qs['4']                ?? '',
+        m.cv_norm              ?? '',
+        m.mi_norm              ?? '',
+        m.qcr_norm             ?? '',
+        m.dqi_composite        ?? '',
+        m.dqi                  ?? '',
+        cobusScore             ?? '',
+        r.reasoning['cobus']   ?? '',
+        mariusScore            ?? '',
+        r.reasoning['marius']  ?? '',
         avgRater,
         r.allSame ? 'yes' : (r.fullyRated ? 'no' : 'incomplete'),
         r.avgDiff !== null ? r.avgDiff.toFixed(2) : '',
